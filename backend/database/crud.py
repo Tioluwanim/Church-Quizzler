@@ -6,7 +6,7 @@ from sqlalchemy import func
 # TEAM CRUD
 # =====================
 
-def create_team(db: Session, name: str, color: str, timer_seconds: int):
+def create_team(db: Session, name: str, color: str, timer_seconds: int = 30):
     team = Team(name=name, color=color, timer_seconds=timer_seconds)
     db.add(team)
     db.commit()
@@ -26,7 +26,7 @@ def get_teams_by_name(db: Session, name: str):
     return db.query(Team).filter(Team.name == name).first()
 
 
-def update_team(db: Session, team_id: int, new_name: str = None, new_color: str = None):
+def update_team(db: Session, team_id: int, new_name: str = None, new_color: str = None, new_timer: int = None):
     team = db.query(Team).filter(Team.id == team_id).first()
     if not team:
         return None
@@ -34,6 +34,8 @@ def update_team(db: Session, team_id: int, new_name: str = None, new_color: str 
         team.name = new_name
     if new_color:
         team.color = new_color
+    if new_timer is not None:
+        team.timer_seconds = new_timer
     db.commit()
     db.refresh(team)
     return team

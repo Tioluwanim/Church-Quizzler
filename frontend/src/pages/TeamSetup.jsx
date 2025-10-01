@@ -30,10 +30,10 @@ function TeamSetup() {
   const addTeam = async () => {
     if (!teamName.trim()) return;
     try {
-      await createTeam({ 
-        name: teamName, 
+      await createTeam({
+        name: teamName,
         color: null, // backend auto-assigns or randomizes if null
-        timer_seconds: timerSeconds 
+        timer_seconds: timerSeconds,
       });
       setTeamName("");
       setTimerSeconds(30);
@@ -78,51 +78,58 @@ function TeamSetup() {
   };
 
   return (
-    <div className="max-w-5xl mx-auto p-6 sm:p-12 bg-gradient-to-b from-white via-yellow-50 to-purple-50 rounded-3xl shadow-2xl font-serif">
-      {/* Header */}
-      <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-purple-800 text-center mb-10">
-        Team Setup
-      </h2>
+    <div className="w-full min-h-screen p-8 bg-gradient-to-br from-yellow-50 via-white to-purple-50 font-serif">
+      {/* Header with Logos */}
+      <div className="flex items-center justify-between mb-12">
+        <img src="/logo1.png" alt="Logo 1" className="h-20 sm:h-24 md:h-28 object-contain" />
+        <h2 className="text-2xl sm:text-4xl md:text-5xl font-bold text-purple-900 text-center px-4">
+          Oke Osun Anglican Diocese <br />
+          Girls & Ladies Guild 2025 Quiz Competition
+        </h2>
+        <img src="/logo2.png" alt="Logo 2" className="h-20 sm:h-24 md:h-28 object-contain" />
+      </div>
 
       {/* Error */}
-      {error && <div className="mb-6 text-red-600 text-lg sm:text-xl text-center">{error}</div>}
+      {error && (
+        <div className="mb-6 text-red-600 text-lg sm:text-xl text-center">{error}</div>
+      )}
 
-      {/* Team Input */}
-      <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 mb-8 justify-center">
+      {/* Team Input Section */}
+      <div className="flex flex-col lg:flex-row gap-6 mb-10 justify-center items-center">
         <input
           type="text"
           placeholder="Team Name"
           value={teamName}
           onChange={(e) => setTeamName(e.target.value)}
-          className="flex-1 px-4 sm:px-6 py-3 border-2 border-purple-200 rounded-full text-lg sm:text-xl focus:outline-none focus:ring-4 focus:ring-purple-300"
+          className="flex-1 px-6 py-3 border-2 border-purple-200 rounded-full text-lg sm:text-xl focus:outline-none focus:ring-4 focus:ring-purple-300"
         />
         <input
           type="number"
           min="5"
           value={timerSeconds}
           onChange={(e) => setTimerSeconds(Number(e.target.value))}
-          className="w-28 px-4 py-3 border-2 border-purple-200 rounded-full text-lg sm:text-xl text-center focus:outline-none focus:ring-4 focus:ring-purple-300"
+          className="w-36 px-4 py-3 border-2 border-purple-200 rounded-full text-lg sm:text-xl text-center focus:outline-none focus:ring-4 focus:ring-purple-300"
           placeholder="Timer (s)"
         />
         <button
           onClick={addTeam}
-          className="px-6 sm:px-10 py-3 bg-gradient-to-r from-purple-600 to-yellow-400 text-white text-lg sm:text-xl font-semibold rounded-full shadow-lg hover:scale-105 transition"
+          className="px-10 py-3 bg-gradient-to-r from-purple-600 to-yellow-400 text-white text-lg sm:text-xl font-semibold rounded-full shadow-lg hover:scale-105 transition"
         >
           Add Team
         </button>
       </div>
 
       {/* Team List */}
-      <h3 className="text-2xl font-semibold mb-4 text-purple-700 text-center">Teams:</h3>
+      <h3 className="text-2xl font-semibold mb-6 text-purple-700 text-center">Teams:</h3>
       {teams.length === 0 ? (
-        <p className="text-gray-500 mb-8 text-center text-lg">No teams added yet.</p>
+        <p className="text-gray-500 mb-12 text-center text-lg">No teams added yet.</p>
       ) : (
-        <ul className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+        <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
           {teams.map((team) => (
             <li
               key={team.id}
               onClick={() => removeTeam(team.id)}
-              className="flex items-center justify-between px-4 py-3 rounded-2xl shadow-lg font-medium text-lg text-white cursor-pointer hover:scale-105 transition"
+              className="flex items-center justify-between px-6 py-4 rounded-2xl shadow-lg font-medium text-lg text-white cursor-pointer hover:scale-105 transition"
               style={{ backgroundColor: team.color || "#6A0DAD" }}
               title="Click to remove team"
             >
@@ -134,11 +141,16 @@ function TeamSetup() {
       )}
 
       {/* File Upload */}
-      <div className="mb-8 text-center">
-        <h2 className="text-xl font-semibold mb-2 text-purple-700">Upload Questions</h2>
+      <div className="mb-12 text-center">
+        <h2 className="text-xl font-semibold mb-4 text-purple-700">Upload Questions</h2>
         <label className="block cursor-pointer">
-          <input type="file" accept=".doc,.docx,.txt,.pdf" onChange={handleFileChange} className="hidden" />
-          <div className="w-full sm:w-3/4 mx-auto px-4 py-3 border-2 border-dashed rounded-2xl text-gray-600 hover:border-purple-500 hover:text-purple-700 text-lg text-center transition">
+          <input
+            type="file"
+            accept=".doc,.docx,.txt,.pdf"
+            onChange={handleFileChange}
+            className="hidden"
+          />
+          <div className="w-full sm:w-3/4 lg:w-1/2 mx-auto px-6 py-4 border-2 border-dashed rounded-2xl text-gray-600 hover:border-purple-500 hover:text-purple-700 text-lg text-center transition">
             {fileName ? fileName : "Click to upload a file"}
           </div>
         </label>
@@ -146,7 +158,7 @@ function TeamSetup() {
           <button
             onClick={handleFileUpload}
             disabled={uploading}
-            className="mt-4 px-6 py-2 bg-green-600 text-white text-lg rounded-full shadow hover:bg-green-700 transition disabled:opacity-50"
+            className="mt-6 px-8 py-3 bg-green-600 text-white text-lg rounded-full shadow hover:bg-green-700 transition disabled:opacity-50"
           >
             {uploading ? "Uploading..." : "Upload File"}
           </button>
@@ -154,12 +166,14 @@ function TeamSetup() {
       </div>
 
       {/* Start Quiz */}
-      <button
-        onClick={() => navigate("/select-team")}
-        className="w-full sm:w-2/3 mx-auto block py-3 bg-gradient-to-r from-yellow-400 to-purple-600 text-white text-lg sm:text-2xl font-bold rounded-full shadow-lg hover:scale-105 transition"
-      >
-        Start Quiz
-      </button>
+      <div className="text-center">
+        <button
+          onClick={() => navigate("/select-team")}
+          className="px-16 py-4 bg-gradient-to-r from-yellow-400 to-purple-600 text-white text-xl sm:text-2xl font-bold rounded-full shadow-lg hover:scale-105 transition"
+        >
+          Start Quiz
+        </button>
+      </div>
     </div>
   );
 }

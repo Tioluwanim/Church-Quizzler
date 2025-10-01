@@ -10,12 +10,24 @@ export async function fetchTeams() {
 }
 
 export async function createTeam(team) {
+  // team = { name, color, timer_seconds }
   const res = await fetch(`${API_BASE}/teams`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(team),
   });
   if (!res.ok) throw new Error("Failed to create team");
+  return res.json();
+}
+
+export async function updateTeam(teamId, team) {
+  // ✅ update a team (including timer_seconds)
+  const res = await fetch(`${API_BASE}/teams/${teamId}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(team),
+  });
+  if (!res.ok) throw new Error("Failed to update team");
   return res.json();
 }
 
