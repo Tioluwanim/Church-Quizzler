@@ -18,8 +18,9 @@ def get_team(db: Session, team_id: int):
     return db.query(Team).filter(Team.id == team_id).first()
 
 
-def get_teams(db: Session, skip: int = 0, limit: int = 10):
-    return db.query(Team).offset(skip).limit(limit).all()
+def get_teams(db: Session):
+    return db.query(Team).all()
+
 
 
 def get_teams_by_name(db: Session, name: str):
