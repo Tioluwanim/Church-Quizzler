@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from .database.models import Team, Question, Score
+from .models import Team, Question, Score
 from sqlalchemy import func
 
 # =====================
