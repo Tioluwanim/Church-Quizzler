@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { fetchQuestions, fetchTeams, fetchScoreboard } from "../api";
 
-const API_BASE = "http://127.0.0.1:8000"; // adjust if backend URL differs
+const API_BASE = "https://church-quizzler.onrender.com"; // adjust if backend URL differs
 
 function QuizPage() {
   const [questions, setQuestions] = useState([]);

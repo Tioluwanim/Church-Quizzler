@@ -10,7 +10,7 @@ function ReviewPage() {
 
   const fetchQuestions = async () => {
     try {
-      const res = await axios.get("http://127.0.0.1:8000/questions");
+      const res = await axios.get("https://church-quizzler.onrender.com/questions");
       setQuestions(res.data);
     } catch (err) {
       console.error("Error loading questions:", err);
