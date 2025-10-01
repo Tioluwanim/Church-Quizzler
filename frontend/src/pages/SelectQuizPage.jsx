@@ -17,7 +17,8 @@ function SelectQuizPage() {
   const handleSelectCategory = (category) => {
     // Store all teams locally for tracking answered
     if (!localStorage.getItem("all_teams")) localStorage.setItem("all_teams", JSON.stringify([]));
-    navigate(`/select-team/${category.id}`);
+    // Navigate to SelectTeam with categoryId as a search param
+    navigate(`/select-team?categoryId=${category.id}`);
   };
 
   return (

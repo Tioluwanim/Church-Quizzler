@@ -1,9 +1,9 @@
 import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { fetchQuestions, submitAnswer, fetchTeams } from "../api";
+import { fetchQuestionsByCategory, submitAnswer, fetchTeams } from "../api";
 
 function QuizPage() {
-  const { teamId, categoryId } = useParams();
+  const { teamId, categoryId, questionId } = useParams();
   const [questions, setQuestions] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [timeLeft, setTimeLeft] = useState(0);
@@ -18,17 +18,23 @@ function QuizPage() {
   // Load questions & team info
   useEffect(() => {
     async function loadData() {
-      const qData = await fetchQuestions(categoryId);
+      const qData = await fetchQuestionsByCategory(categoryId);
       setQuestions(qData);
 
       const teams = await fetchTeams();
       const selectedTeam = teams.find(t => t.id === parseInt(teamId));
       setTeam(selectedTeam);
 
+      // Set starting question index based on questionId in URL
+      if (questionId) {
+        const idx = qData.findIndex(q => q.id === parseInt(questionId));
+        setCurrentIndex(idx >= 0 ? idx : 0);
+      }
+
       if (selectedTeam) setTimeLeft(selectedTeam.timer_seconds || 30);
     }
     loadData();
-  }, [categoryId, teamId]);
+  }, [categoryId, teamId, questionId]);
 
   // Timer
   useEffect(() => {
@@ -44,7 +50,7 @@ function QuizPage() {
           setTimeout(() => {
             setShowAnswer(true);
             setAnswerRevealed(true);
-          }, 1000); // show answer after 1s
+          }, 1000);
         }
         return t - 1;
       });
@@ -62,7 +68,7 @@ function QuizPage() {
       await submitAnswer({ team_id: team.id, question_id: q.id, points: q.points });
     }
 
-    // Next question or team
+    // Next question or next team
     if (currentIndex + 1 < questions.length) {
       setCurrentIndex(currentIndex + 1);
       setTimeLeft(team.timer_seconds || 30);
@@ -79,9 +85,9 @@ function QuizPage() {
       const allTeams = JSON.parse(localStorage.getItem("all_teams") || "[]");
       if (answered.length >= allTeams.length) {
         localStorage.removeItem(key);
-        navigate("/select-quiz"); // all done
+        navigate("/select-quiz");
       } else {
-        navigate(`/select-team/${categoryId}`); // next team
+        navigate(`/select-team?categoryId=${categoryId}`);
       }
     }
   };
