@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 from pydantic import BaseModel
 from werkzeug.utils import secure_filename
+from fastapi.staticfiles import StaticFiles
 from docx import Document
 import PyPDF2
 
@@ -20,7 +21,8 @@ UPLOAD_FOLDER = "uploads"
 ALLOWED_EXTENSIONS = {"txt", "docx", "pdf"}
 
 app = FastAPI(title="Church Quiz API", version="1.0")
-
+frontend_build_path = os.path.join(os.path.dirname(__file__), "..", "frontend")
+app.mount("/", StaticFiles(directory=frontend_build_path, html=True), name="frontend")
 # Enable CORS
 app.add_middleware(
     CORSMiddleware,

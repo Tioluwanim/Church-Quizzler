@@ -1,4 +1,4 @@
-const API_BASE = "http://127.0.0.1:8000"; // Adjust if backend runs elsewhere
+const API_BASE = "https://church-quizzler.onrender.com"; // Adjust if backend runs elsewhere
 
 // Teams
 export async function fetchTeams() {
