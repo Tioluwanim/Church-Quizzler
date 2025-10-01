@@ -86,12 +86,24 @@ export async function awardScore(score) {
   const res = await fetch(`${API_BASE}/scores`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(score), // score = { team_id, category_id, points }
+    body: JSON.stringify(score), // score = { team_id, question_id, points }
   });
   if (!res.ok) throw new Error("Failed to award score");
   return res.json();
 }
 
+// ✅ alias for QuizPage.jsx compatibility
+export async function submitAnswer(teamId, questionId, points) {
+  return awardScore({
+    team_id: teamId,
+    question_id: questionId,
+    points: points,
+  });
+}
+
+// --------------------
+// SCOREBOARD
+// --------------------
 export async function fetchScoreboard() {
   const res = await fetch(`${API_BASE}/scoreboard`);
   if (!res.ok) throw new Error("Failed to fetch scoreboard");
