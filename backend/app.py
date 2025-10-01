@@ -6,6 +6,7 @@ from typing import List, Optional
 from pydantic import BaseModel
 from werkzeug.utils import secure_filename
 from fastapi.staticfiles import StaticFiles
+from starlette.responses import FileResponse
 from docx import Document
 import PyPDF2
 
@@ -22,7 +23,20 @@ ALLOWED_EXTENSIONS = {"txt", "docx", "pdf"}
 
 app = FastAPI(title="Church Quiz API", version="1.0")
 frontend_build_path = os.path.join(os.path.dirname(__file__), "../frontend/dist")
+
+if not os.path.exists(frontend_build_path):
+    raise RuntimeError(f"Frontend build folder not found: {frontend_build_path}")
+
+# Serve static assets
+app.mount("/static", StaticFiles(directory=os.path.join(frontend_build_path, "assets")), name="static")
+
+# Serve React app
 app.mount("/", StaticFiles(directory=frontend_build_path, html=True), name="frontend")
+
+# Catch-all route for React Router
+@app.get("/{full_path:path}")
+def catch_all(full_path: str):
+    return FileResponse(os.path.join(frontend_build_path, "index.html"))
 # Enable CORS
 app.add_middleware(
     CORSMiddleware,
