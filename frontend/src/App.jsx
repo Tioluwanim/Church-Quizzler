@@ -26,7 +26,6 @@ function App() {
             <div className="hidden md:flex gap-6 text-lg">
               <Link to="/" className="hover:text-yellow-300 transition">Setup</Link>
               <Link to="/select-quiz" className="hover:text-yellow-300 transition">Select Quiz</Link>
-              <Link to="/select-team" className="hover:text-yellow-300 transition">Select Team</Link>
               <Link to="/review" className="hover:text-yellow-300 transition">Review</Link>
               <Link to="/scoreboard" className="hover:text-yellow-300 transition">Scoreboard</Link>
             </div>
@@ -44,7 +43,6 @@ function App() {
             <div className="md:hidden bg-purple-700 px-4 pt-2 pb-4 flex flex-col gap-2">
               <Link onClick={toggleMenu} to="/" className="hover:text-yellow-300 transition">Setup</Link>
               <Link onClick={toggleMenu} to="/select-quiz" className="hover:text-yellow-300 transition">Select Quiz</Link>
-              <Link onClick={toggleMenu} to="/select-team" className="hover:text-yellow-300 transition">Select Team</Link>
               <Link onClick={toggleMenu} to="/review" className="hover:text-yellow-300 transition">Review</Link>
               <Link onClick={toggleMenu} to="/scoreboard" className="hover:text-yellow-300 transition">Scoreboard</Link>
             </div>
@@ -56,8 +54,8 @@ function App() {
           <Routes>
             <Route path="/" element={<TeamSetup />} />
             <Route path="/select-quiz" element={<SelectQuizPage />} />
-            <Route path="/select-team" element={<SelectTeam />} />
-            <Route path="/quiz/:teamId/:categoryId" element={<QuizPage />} />
+            <Route path="/select-team/:categoryId" element={<SelectTeam />} />
+            <Route path="/quiz/:teamId/:categoryId/:questionId" element={<QuizPage />} />
             <Route path="/review" element={<ReviewPage />} />
             <Route path="/scoreboard" element={<Scoreboard />} />
           </Routes>
