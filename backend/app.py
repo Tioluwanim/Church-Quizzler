@@ -8,7 +8,7 @@ from werkzeug.utils import secure_filename
 from docx import Document
 import PyPDF2
 
-from .db import Base, engine, SessionLocal
+from .database.db import Base, engine, SessionLocal
 from .database import crud, models
 
 # =====================
