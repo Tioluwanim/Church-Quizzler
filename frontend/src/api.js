@@ -1,72 +1,90 @@
-import axios from "axios";
+const API_BASE = import.meta.env.VITE_API_BASE || "https://church-quizzler.onrender.com";
 
-const API_BASE = "https://church-quizzler.onrender.com";
-
-// QUESTIONS
-export const fetchQuestions = async () => {
-  try {
-    const res = await axios.get(`${API_BASE}/questions`);
-    return res.data;
-  } catch (err) {
-    console.error("Error fetching questions:", err);
-    return [];
-  }
-};
-
-export const uploadQuestions = async (file) => {
-  try {
-    const formData = new FormData();
-    formData.append("file", file);
-
-    const res = await axios.post(`${API_BASE}/questions/upload`, formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
-
-    return res.data; // expected { uploaded: number }
-  } catch (err) {
-    console.error("Error uploading questions:", err);
-    throw err;
-  }
-};
-
+// --------------------
 // TEAMS
-export const fetchTeams = async () => {
-  try {
-    const res = await axios.get(`${API_BASE}/teams`);
-    return res.data;
-  } catch (err) {
-    console.error("Error fetching teams:", err);
-    return [];
-  }
-};
+// --------------------
+export async function fetchTeams() {
+  const res = await fetch(`${API_BASE}/teams`);
+  if (!res.ok) throw new Error("Failed to fetch teams");
+  return res.json();
+}
 
-export const createTeam = async (team) => {
-  try {
-    const res = await axios.post(`${API_BASE}/teams`, team);
-    return res.data;
-  } catch (err) {
-    console.error("Error creating team:", err);
-    throw err;
-  }
-};
+export async function createTeam(team) {
+  const res = await fetch(`${API_BASE}/teams`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(team),
+  });
+  if (!res.ok) throw new Error("Failed to create team");
+  return res.json();
+}
 
-export const deleteTeam = async (teamId) => {
-  try {
-    const res = await axios.delete(`${API_BASE}/teams/${teamId}`);
-    return res.data;
-  } catch (err) {
-    console.error("Error deleting team:", err);
-    throw err;
-  }
-};
+export async function deleteTeam(teamId) {
+  const res = await fetch(`${API_BASE}/teams/${teamId}`, {
+    method: "DELETE",
+  });
+  if (!res.ok) throw new Error("Failed to delete team");
+  return res.json();
+}
 
+// --------------------
+// QUESTIONS
+// --------------------
+export async function fetchQuestions() {
+  const res = await fetch(`${API_BASE}/questions`);
+  if (!res.ok) throw new Error("Failed to fetch questions");
+  return res.json();
+}
+
+export async function createQuestion(question) {
+  const res = await fetch(`${API_BASE}/questions`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(question),
+  });
+  if (!res.ok) throw new Error("Failed to create question");
+  return res.json();
+}
+
+// --------------------
+// UPLOAD QUESTIONS
+// --------------------
+export async function uploadQuestions(file) {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const res = await fetch(`${API_BASE}/questions/upload`, {
+    method: "POST",
+    body: formData,
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.detail || "Failed to upload file");
+  }
+  return res.json();
+}
+
+// --------------------
 // SCORES
-export const fetchScoreboard = async () => {
-  try {
-    const res = await axios.get(`${API_BASE}/scores`);
-    return res.data;
-  } catch (err) {
-    console.error("Error fetching scoreboard:", err);
-    return [];
-  }
-};
+// --------------------
+export async function awardScore(score) {
+  const res = await fetch(`${API_BASE}/scores`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(score),
+  });
+  if (!res.ok) throw new Error("Failed to award score");
+  return res.json();
+}
+
+export async function fetchScoreboard() {
+  const res = await fetch(`${API_BASE}/scoreboard`);
+  if (!res.ok) throw new Error("Failed to fetch scoreboard");
+  return res.json();
+}
+
+export async function fetchTeamScores(teamId) {
+  const res = await fetch(`${API_BASE}/teams/${teamId}/scores`);
+  if (!res.ok) throw new Error("Failed to fetch team scores");
+  return res.json();
+}

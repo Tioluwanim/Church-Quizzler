@@ -3,11 +3,7 @@ import { fetchScoreboard } from "../api";
 
 function Scoreboard() {
   const [scores, setScores] = useState([]);
-
-  const loadScoreboard = async () => {
-    const data = await fetchScoreboard();
-    setScores(data);
-  };
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     loadScoreboard();
@@ -15,23 +11,35 @@ function Scoreboard() {
     return () => clearInterval(interval);
   }, []);
 
-  const getMedalStyle = (index) => {
-    if (index === 0) return "bg-yellow-300 font-bold text-purple-900 shadow-lg";
-    if (index === 1) return "bg-gray-300 font-bold text-purple-900";
-    if (index === 2) return "bg-amber-700 text-white font-bold";
+  const loadScoreboard = async () => {
+    try {
+      setLoading(true);
+      const data = await fetchScoreboard();
+      setScores(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getMedalStyle = (idx) => {
+    if (idx === 0) return "bg-yellow-300 text-purple-900 font-bold shadow-lg";
+    if (idx === 1) return "bg-gray-300 text-purple-900 font-bold";
+    if (idx === 2) return "bg-amber-700 text-white font-bold";
     return "bg-white";
   };
 
+  if (loading) return <p className="text-center mt-8 text-lg">Loading scoreboard...</p>;
+
   return (
-    <div className="min-h-screen p-4 md:p-12 bg-gradient-to-r from-yellow-50 via-purple-50 to-indigo-100">
-      <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6 md:mb-8 text-center text-purple-800">
-        🏆 Scoreboard
-      </h1>
-      <ul className="space-y-2 md:space-y-4 max-w-md md:max-w-xl lg:max-w-2xl mx-auto px-2 md:px-0">
+    <div className="max-w-4xl mx-auto p-6 sm:p-12 bg-gradient-to-b from-yellow-50 via-white to-purple-50 rounded-3xl shadow-2xl flex flex-col gap-6 font-serif">
+      <h2 className="text-3xl sm:text-4xl font-bold text-purple-800 text-center mb-6">🏆 Scoreboard</h2>
+      <ul className="space-y-4">
         {scores.map((row, idx) => (
           <li
             key={idx}
-            className={`flex justify-between px-4 md:px-6 py-3 md:py-4 rounded-lg text-base md:text-xl shadow ${getMedalStyle(idx)}`}
+            className={`flex justify-between px-4 py-3 rounded-2xl shadow ${getMedalStyle(idx)}`}
           >
             <span>
               {idx === 0 && "🥇 "}
