@@ -8,9 +8,9 @@ from werkzeug.utils import secure_filename
 from docx import Document
 import PyPDF2
 
-from .database.db import Base, engine, SessionLocal
-from .database import crud, models
-
+# Absolute imports
+from database.db import Base, engine, SessionLocal
+from database import crud, models
 
 
 # =====================
@@ -42,7 +42,6 @@ def get_db():
         yield db
     finally:
         db.close()
-
 
 # =====================
 # Pydantic Schemas
@@ -89,7 +88,6 @@ class ScoreOut(BaseModel):
     class Config:
         orm_mode = True
 
-
 # =====================
 # TEAM ROUTES
 # =====================
@@ -121,7 +119,6 @@ def delete_team(team_id: int, db: Session = Depends(get_db)):
     if not deleted:
         raise HTTPException(status_code=404, detail="Team not found")
     return {"message": f"Team {deleted.name} deleted"}
-
 
 # =====================
 # QUESTION ROUTES
@@ -168,7 +165,6 @@ def delete_question(question_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Question not found")
     return {"message": "Question deleted"}
 
-
 # =====================
 # FILE UPLOAD
 # =====================
@@ -210,7 +206,6 @@ def upload_questions(file: UploadFile = File(...), db: Session = Depends(get_db)
             created.append(question)
 
     return {"uploaded": len(created), "questions": created}
-
 
 # =====================
 # SCORE ROUTES
