@@ -56,7 +56,7 @@ function App() {
           <Routes>
             <Route path="/" element={<TeamSetup />} />
             <Route path="/select-quiz" element={<SelectQuizPage />} />
-            <Route path="/select-team/:categoryId" element={<SelectTeam />} />
+            <Route path="/select-team" element={<SelectTeam />} />
             <Route path="/quiz/:teamId/:categoryId" element={<QuizPage />} />
             <Route path="/review" element={<ReviewPage />} />
             <Route path="/scoreboard" element={<Scoreboard />} />

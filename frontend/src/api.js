@@ -10,7 +10,6 @@ export async function fetchTeams() {
 }
 
 export async function createTeam(team) {
-  // team = { name, color, timer_seconds }
   const res = await fetch(`${API_BASE}/teams`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -21,7 +20,6 @@ export async function createTeam(team) {
 }
 
 export async function updateTeam(teamId, team) {
-  // ✅ update a team (including timer_seconds)
   const res = await fetch(`${API_BASE}/teams/${teamId}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
@@ -84,10 +82,12 @@ export async function uploadQuestions(file) {
     method: "POST",
     body: formData,
   });
+
   if (!res.ok) {
-    const err = await res.json();
+    const err = await res.json().catch(() => ({ detail: "Failed to upload file" }));
     throw new Error(err.detail || "Failed to upload file");
   }
+
   return res.json();
 }
 
@@ -104,13 +104,9 @@ export async function awardScore(score) {
   return res.json();
 }
 
-// ✅ alias for QuizPage.jsx compatibility
+// alias for QuizPage.jsx compatibility
 export async function submitAnswer(teamId, questionId, points) {
-  return awardScore({
-    team_id: teamId,
-    question_id: questionId,
-    points: points,
-  });
+  return awardScore({ team_id: teamId, question_id: questionId, points });
 }
 
 // --------------------
@@ -123,7 +119,7 @@ export async function fetchScoreboard() {
 }
 
 export async function fetchScoreboardByCategory(categoryId) {
-  const res = await fetch(`${API_BASE}/scoreboard/${categoryId}`);
+  const res = await fetch(`${API_BASE}/scoreboard/category/${categoryId}`);
   if (!res.ok) throw new Error("Failed to fetch scoreboard by category");
   return res.json();
 }
