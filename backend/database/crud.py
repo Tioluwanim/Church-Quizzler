@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from .models import Team, Question, Score
-from sqlalchemy import func
+from sqlalchemy import func, distinct
 
 # =====================
 # TEAM CRUD
@@ -94,3 +94,11 @@ def get_scoreboard(db: Session):
         .all()
     )
     return [{"team_name": r.team_name, "total_points": r.total_points} for r in results]
+# Get unique categories from questions table
+def get_categories_from_questions(db: Session):
+    categories = db.query(distinct(Question.category)).all()
+    return [c[0] for c in categories if c[0] is not None]
+
+# Get questions by category
+def get_questions_by_category(db: Session, category: str):
+    return db.query(Question).filter(Question.category == category).all()

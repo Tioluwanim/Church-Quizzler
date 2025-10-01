@@ -161,7 +161,7 @@ def get_questions(db: Session = Depends(get_db)):
 
 @app.get("/categories")
 def get_categories(db: Session = Depends(get_db)):
-    return crud.get_categories(db)
+    return crud.get_categories_from_questions(db)
 
 @app.get("/categories/{category}/questions", response_model=List[QuestionOut])
 def get_questions_by_category(category: str, db: Session = Depends(get_db)):
