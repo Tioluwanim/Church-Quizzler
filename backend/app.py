@@ -19,7 +19,7 @@ from database import crud, models
 UPLOAD_FOLDER = "uploads"
 ALLOWED_EXTENSIONS = {"txt", "docx", "pdf"}
 
-app = FastAPI(title="Church Quiz API", version="1.0")
+app = FastAPI(title="Church Quiz API", version="1.1")
 
 # Enable CORS
 app.add_middleware(
@@ -49,6 +49,7 @@ def get_db():
 class TeamCreate(BaseModel):
     name: str
     color: Optional[str] = None
+    timer_seconds: Optional[int] = 30
 
 class TeamOut(BaseModel):
     id: int
@@ -62,6 +63,7 @@ class QuestionCreate(BaseModel):
     answer: str
     category: Optional[str] = None
     points: Optional[int] = 10
+    options: Optional[List[str]] = None   # ✅ added options here
 
 class QuestionOut(BaseModel):
     id: int
@@ -69,6 +71,7 @@ class QuestionOut(BaseModel):
     answer: str
     category: Optional[str]
     points: int
+    options: Optional[List[str]]
     class Config:
         orm_mode = True
 
@@ -90,7 +93,13 @@ class ScoreOut(BaseModel):
 # =====================
 @app.post("/teams", response_model=TeamOut)
 def create_team(team: TeamCreate, db: Session = Depends(get_db)):
-    return crud.create_team(db, name=team.name, color=team.color or "#6A0DAD")
+    return crud.create_team(
+        db,
+        name=team.name,
+        color=team.color or "#6A0DAD",
+        timer_seconds=team.timer_seconds
+    )
+
 
 @app.get("/teams", response_model=List[TeamOut])
 def get_teams(db: Session = Depends(get_db)):
@@ -122,7 +131,14 @@ def delete_team(team_id: int, db: Session = Depends(get_db)):
 # =====================
 @app.post("/questions", response_model=QuestionOut)
 def create_question(question: QuestionCreate, db: Session = Depends(get_db)):
-    return crud.create_question(db, text=question.text, answer=question.answer, category=question.category, points=question.points)
+    return crud.create_question(
+        db,
+        text=question.text,
+        answer=question.answer,
+        category=question.category,
+        points=question.points,
+        options=question.options,   # ✅ pass options to CRUD
+    )
 
 @app.get("/questions", response_model=List[QuestionOut])
 def get_questions(db: Session = Depends(get_db)):
@@ -159,7 +175,11 @@ def upload_questions(file: UploadFile = File(...), db: Session = Depends(get_db)
             a = parts[1].strip() if len(parts) > 1 else ""
             c = parts[2].strip() if len(parts) > 2 else None
             p = int(parts[3].strip()) if len(parts) > 3 and parts[3].strip().isdigit() else 10
-            question = crud.create_question(db, text=q, answer=a, category=c, points=p)
+            opts = [opt.strip() for opt in parts[4].split(",")] if len(parts) > 4 else None
+
+            question = crud.create_question(
+                db, text=q, answer=a, category=c, points=p, options=opts
+            )
             created.append(question)
     return {"uploaded": len(created), "questions": created}
 
@@ -181,5 +201,4 @@ frontend_build_path = os.path.join(os.path.dirname(__file__), "../frontend/dist"
 if not os.path.exists(frontend_build_path):
     raise RuntimeError(f"Frontend build folder not found: {frontend_build_path}")
 
-# Serve static files and index.html for React Router
 app.mount("/", StaticFiles(directory=frontend_build_path, html=True), name="frontend")

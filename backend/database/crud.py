@@ -6,8 +6,8 @@ from sqlalchemy import func
 # TEAM CRUD
 # =====================
 
-def create_team(db: Session, name: str, color: str):
-    team = Team(name=name, color=color)
+def create_team(db: Session, name: str, color: str, timer_seconds: int):
+    team = Team(name=name, color=color, timer_seconds=timer_seconds)
     db.add(team)
     db.commit()
     db.refresh(team)
@@ -51,8 +51,8 @@ def delete_team(db: Session, team_id: int):
 # QUESTION CRUD
 # =====================
 
-def create_question(db: Session, text: str, answer: str, category: str = None, points: int = 10):
-    question = Question(text=text, answer=answer, category=category, points=points)
+def create_question(db: Session, text: str, answer: str, category: str = None, points: int = 10, options=None):
+    question = Question(text=text, answer=answer, category=category, points=points, options=options)
     db.add(question)
     db.commit()
     db.refresh(question)
@@ -70,7 +70,7 @@ def get_questions(db: Session, skip: int = 0, limit: int = 10):
 def update_question(
     db: Session, question_id: int,
     text: str = None, answer: str = None,
-    category: str = None, points: int = None
+    category: str = None, points: int = None, options=None
 ):
     question = db.query(Question).filter(Question.id == question_id).first()
     if not question:
@@ -83,6 +83,8 @@ def update_question(
         question.category = category
     if points is not None:
         question.points = points
+    if options is not None:
+        question.options = options
     db.commit()
     db.refresh(question)
     return question
@@ -128,13 +130,20 @@ def delete_score(db: Session, score_id: int):
     return score
 
 
+# =====================
+# SCOREBOARD (TOTAL + BY CATEGORY)
+# =====================
+
 def get_scoreboard(db: Session):
+    """
+    Returns a simple scoreboard with total points per team.
+    """
     results = (
         db.query(
             Team.name.label("team_name"),
             func.coalesce(func.sum(Score.points_awarded), 0).label("total_points")
         )
-        .outerjoin(Score, Team.id == Score.team_id)  # 👈 outer join includes teams with no scores
+        .outerjoin(Score, Team.id == Score.team_id)
         .group_by(Team.id)
         .order_by(func.coalesce(func.sum(Score.points_awarded), 0).desc())
         .all()
@@ -144,3 +153,31 @@ def get_scoreboard(db: Session):
         {"team_name": row.team_name, "total_points": row.total_points}
         for row in results
     ]
+
+
+def get_scoreboard_by_category(db: Session):
+    """
+    Returns scoreboard grouped by team and category,
+    including total scores.
+    """
+    results = (
+        db.query(
+            Team.name.label("team_name"),
+            Question.category.label("category"),
+            func.coalesce(func.sum(Score.points_awarded), 0).label("points")
+        )
+        .join(Score, Team.id == Score.team_id)
+        .join(Question, Question.id == Score.question_id)
+        .group_by(Team.id, Question.category)
+        .all()
+    )
+
+    # Organize into dictionary
+    scoreboard = {}
+    for row in results:
+        if row.team_name not in scoreboard:
+            scoreboard[row.team_name] = {"categories": {}, "total_points": 0}
+        scoreboard[row.team_name]["categories"][row.category] = row.points
+        scoreboard[row.team_name]["total_points"] += row.points
+
+    return scoreboard

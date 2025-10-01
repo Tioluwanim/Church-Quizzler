@@ -1,78 +1,94 @@
-import { useState, useEffect } from "react";
-import { fetchQuestions, awardScore } from "../api";
+import { useEffect, useState, useRef } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { fetchQuestions, submitAnswer } from "../api";
 
 function QuizPage() {
+  const { teamId, categoryId } = useParams();
   const [questions, setQuestions] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [selectedAnswer, setSelectedAnswer] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [timeLeft, setTimeLeft] = useState(() => Number(localStorage.getItem("quiz_timer")) || 30);
+  const [autoNext, setAutoNext] = useState(false);
+  const navigate = useNavigate();
+
+  const tickSound = useRef(new Audio("/sounds/tick.mp3"));
+  const endSound = useRef(new Audio("/sounds/end.mp3"));
 
   useEffect(() => {
-    loadQuestions();
-  }, []);
-
-  const loadQuestions = async () => {
-    try {
-      setLoading(true);
-      const data = await fetchQuestions();
-      setQuestions(data);
-      setError("");
-    } catch (err) {
-      console.error(err);
-      setError("Failed to load questions.");
-    } finally {
-      setLoading(false);
+    async function load() {
+      const q = await fetchQuestions(categoryId);
+      setQuestions(q);
     }
-  };
+    load();
+  }, [categoryId]);
 
-  const handleNext = async () => {
-    const currentQuestion = questions[currentIndex];
-    // send points logic (example: 10 points if answer matches)
-    if (selectedAnswer) {
-      await awardScore({
-        team_id: 1, // replace with dynamic team
-        question_id: currentQuestion.id,
-        points: selectedAnswer === currentQuestion.answer ? 10 : 0,
+  // countdown
+  useEffect(() => {
+    if (timeLeft <= 0) {
+      endSound.current.play();
+      setTimeout(() => {
+        setAutoNext(true);
+      }, 5000);
+      return;
+    }
+    const timer = setInterval(() => {
+      setTimeLeft((t) => {
+        if (t > 1) tickSound.current.play();
+        return t - 1;
       });
-    }
-    setSelectedAnswer("");
-    if (currentIndex + 1 < questions.length) setCurrentIndex(currentIndex + 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [timeLeft]);
+
+  // auto go back after delay
+  useEffect(() => {
+    if (autoNext) handleFinish();
+  }, [autoNext]);
+
+  if (!questions.length) return <p>Loading...</p>;
+
+  const q = questions[currentIndex];
+
+  const handleAnswer = async (option) => {
+    await submitAnswer({ teamId, questionId: q.id, answer: option });
+    handleFinish();
   };
 
-  if (loading) return <p className="text-center mt-8 text-lg">Loading questions...</p>;
-  if (error) return <p className="text-center mt-8 text-red-600">{error}</p>;
-  if (questions.length === 0) return <p className="text-center mt-8 text-gray-500">No questions available.</p>;
+  const handleFinish = () => {
+    // Track answered teams per category
+    const key = `answered_${categoryId}`;
+    let answered = JSON.parse(localStorage.getItem(key) || "[]");
+    if (!answered.includes(teamId)) {
+      answered.push(teamId);
+      localStorage.setItem(key, JSON.stringify(answered));
+    }
 
-  const question = questions[currentIndex];
+    // Check if all teams answered
+    const allTeams = JSON.parse(localStorage.getItem("all_teams") || "[]");
+    if (answered.length >= allTeams.length) {
+      // Reset for this category
+      localStorage.removeItem(key);
+      navigate("/select-quiz");
+    } else {
+      navigate(`/select-team/${categoryId}`);
+    }
+  };
 
   return (
-    <div className="max-w-4xl mx-auto p-6 sm:p-12 bg-gradient-to-b from-yellow-50 via-white to-purple-50 rounded-3xl shadow-2xl flex flex-col gap-6 font-serif">
-      <h2 className="text-2xl sm:text-3xl font-bold text-purple-800 text-center">
-        Question {currentIndex + 1} of {questions.length}
-      </h2>
-      <p className="text-lg sm:text-xl text-gray-700">{question.text}</p>
-
-      <div className="flex flex-col gap-3">
-        {["A", "B", "C", "D"].map((option, idx) => (
+    <div className="max-w-3xl mx-auto p-6 bg-white rounded-xl shadow">
+      <h1 className="text-2xl font-bold mb-4">Question</h1>
+      <p className="mb-4">{q.text}</p>
+      <div className="grid gap-3 mb-6">
+        {q.options.map((opt, idx) => (
           <button
             key={idx}
-            className={`px-4 py-3 rounded-2xl shadow text-left text-lg sm:text-xl transition hover:scale-105 ${
-              selectedAnswer === option ? "bg-purple-600 text-white" : "bg-white"
-            }`}
-            onClick={() => setSelectedAnswer(option)}
+            onClick={() => handleAnswer(opt)}
+            className="p-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
           >
-            {option}: {question[option.toLowerCase()]}
+            {opt}
           </button>
         ))}
       </div>
-
-      <button
-        onClick={handleNext}
-        className="self-center px-6 py-3 bg-gradient-to-r from-yellow-400 to-purple-600 text-white text-lg sm:text-xl font-bold rounded-full shadow hover:scale-105 transition"
-      >
-        {currentIndex + 1 === questions.length ? "Finish Quiz" : "Next Question"}
-      </button>
+      <div className="text-center text-xl font-bold">⏳ {timeLeft}s</div>
     </div>
   );
 }

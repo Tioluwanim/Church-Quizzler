@@ -28,11 +28,26 @@ export async function deleteTeam(teamId) {
 }
 
 // --------------------
+// CATEGORIES
+// --------------------
+export async function fetchCategories() {
+  const res = await fetch(`${API_BASE}/categories`);
+  if (!res.ok) throw new Error("Failed to fetch categories");
+  return res.json();
+}
+
+// --------------------
 // QUESTIONS
 // --------------------
 export async function fetchQuestions() {
   const res = await fetch(`${API_BASE}/questions`);
   if (!res.ok) throw new Error("Failed to fetch questions");
+  return res.json();
+}
+
+export async function fetchQuestionsByCategory(categoryId) {
+  const res = await fetch(`${API_BASE}/categories/${categoryId}/questions`);
+  if (!res.ok) throw new Error("Failed to fetch questions for category");
   return res.json();
 }
 
@@ -71,7 +86,7 @@ export async function awardScore(score) {
   const res = await fetch(`${API_BASE}/scores`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(score),
+    body: JSON.stringify(score), // score = { team_id, category_id, points }
   });
   if (!res.ok) throw new Error("Failed to award score");
   return res.json();
@@ -80,6 +95,12 @@ export async function awardScore(score) {
 export async function fetchScoreboard() {
   const res = await fetch(`${API_BASE}/scoreboard`);
   if (!res.ok) throw new Error("Failed to fetch scoreboard");
+  return res.json();
+}
+
+export async function fetchScoreboardByCategory(categoryId) {
+  const res = await fetch(`${API_BASE}/scoreboard/${categoryId}`);
+  if (!res.ok) throw new Error("Failed to fetch scoreboard by category");
   return res.json();
 }
 

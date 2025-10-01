@@ -1,53 +1,53 @@
 import { useEffect, useState } from "react";
-import { fetchScoreboard } from "../api";
+import { fetchScoreboard, fetchCategories, fetchScoreboardByCategory } from "../api";
 
 function Scoreboard() {
-  const [scores, setScores] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [categories, setCategories] = useState([]);
+  const [overall, setOverall] = useState([]);
+  const [perCategory, setPerCategory] = useState({});
 
   useEffect(() => {
-    loadScoreboard();
-    const interval = setInterval(loadScoreboard, 5000);
-    return () => clearInterval(interval);
+    async function load() {
+      const cats = await fetchCategories();
+      setCategories(cats);
+
+      const overallData = await fetchScoreboard();
+      setOverall(overallData);
+
+      // Load per-category scores
+      const catScores = {};
+      for (const c of cats) {
+        catScores[c.id] = await fetchScoreboardByCategory(c.id);
+      }
+      setPerCategory(catScores);
+    }
+    load();
   }, []);
 
-  const loadScoreboard = async () => {
-    try {
-      setLoading(true);
-      const data = await fetchScoreboard();
-      setScores(data);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const getMedalStyle = (idx) => {
-    if (idx === 0) return "bg-yellow-300 text-purple-900 font-bold shadow-lg";
-    if (idx === 1) return "bg-gray-300 text-purple-900 font-bold";
-    if (idx === 2) return "bg-amber-700 text-white font-bold";
-    return "bg-white";
-  };
-
-  if (loading) return <p className="text-center mt-8 text-lg">Loading scoreboard...</p>;
-
   return (
-    <div className="max-w-4xl mx-auto p-6 sm:p-12 bg-gradient-to-b from-yellow-50 via-white to-purple-50 rounded-3xl shadow-2xl flex flex-col gap-6 font-serif">
-      <h2 className="text-3xl sm:text-4xl font-bold text-purple-800 text-center mb-6">🏆 Scoreboard</h2>
-      <ul className="space-y-4">
-        {scores.map((row, idx) => (
-          <li
-            key={idx}
-            className={`flex justify-between px-4 py-3 rounded-2xl shadow ${getMedalStyle(idx)}`}
-          >
-            <span>
-              {idx === 0 && "🥇 "}
-              {idx === 1 && "🥈 "}
-              {idx === 2 && "🥉 "}
-              {row.team_name}
-            </span>
-            <span className="font-bold">{row.total_points} pts</span>
+    <div className="max-w-3xl mx-auto p-6 bg-white rounded-2xl shadow-lg">
+      <h1 className="text-2xl font-bold mb-6">🏆 Scoreboard</h1>
+
+      {categories.map((cat) => (
+        <div key={cat.id} className="mb-6">
+          <h2 className="text-xl font-semibold mb-2">{cat.name} Scores</h2>
+          <ul className="bg-gray-100 rounded-lg p-4">
+            {perCategory[cat.id]?.map((t) => (
+              <li key={t.team_id} className="flex justify-between border-b py-1">
+                <span>{t.team_name}</span>
+                <span className="font-bold">{t.points}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+
+      <h2 className="text-xl font-semibold mt-6 mb-2">🏅 Final Scores</h2>
+      <ul className="bg-yellow-100 rounded-lg p-4">
+        {overall.map((t) => (
+          <li key={t.team_id} className="flex justify-between border-b py-1">
+            <span>{t.team_name}</span>
+            <span className="font-bold">{t.total_points}</span>
           </li>
         ))}
       </ul>

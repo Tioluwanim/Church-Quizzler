@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime, func
+from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime, func, JSON
 from sqlalchemy.orm import relationship
 from .db import Base
 
@@ -9,7 +9,7 @@ class Team(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(100), unique=True, nullable=False, index=True)
     color = Column(String(50), nullable=False)
-
+    timer_seconds = Column(Integer, default=30)
     # relationships
     scores = relationship("Score", back_populates="team", cascade="all, delete-orphan")
 
@@ -20,8 +20,9 @@ class Question(Base):
     id = Column(Integer, primary_key=True, index=True)
     text = Column(Text, nullable=False)
     answer = Column(Text, nullable=False)
-    category = Column(String(100), nullable=True)   # optional: Bible, History, etc.
-    points = Column(Integer, default=10)            # points per question
+    options = Column(JSON, nullable=True)               # ✅ multiple choice if provided
+    category = Column(String(100), nullable=True)       # ✅ session/category
+    points = Column(Integer, default=10)
 
     # relationships
     scores = relationship("Score", back_populates="question", cascade="all, delete-orphan")
