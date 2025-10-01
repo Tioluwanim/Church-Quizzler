@@ -1,88 +1,72 @@
-const API_BASE = "https://church-quizzler.onrender.com"; // adjust if backend URL differs
+import axios from "axios";
 
-// =====================
-// Teams
-// =====================
-export async function fetchTeams() {
-  try {
-    const res = await fetch(`${API_BASE}/teams`);
-    if (!res.ok) throw new Error("Failed to fetch teams");
-    return res.json();
-  } catch (err) {
-    console.error("Error fetching teams:", err);
-    return [];
-  }
-}
+const API_BASE = "https://church-quizzler.onrender.com";
 
-export async function createTeam(team) {
+// QUESTIONS
+export const fetchQuestions = async () => {
   try {
-    const res = await fetch(`${API_BASE}/teams`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(team),
-    });
-    if (!res.ok) throw new Error("Failed to create team");
-    return res.json();
-  } catch (err) {
-    console.error("Error creating team:", err);
-  }
-}
-
-export async function deleteTeam(id) {
-  try {
-    const res = await fetch(`${API_BASE}/teams/${id}`, { method: "DELETE" });
-    if (!res.ok) throw new Error("Failed to delete team");
-  } catch (err) {
-    console.error("Error deleting team:", err);
-  }
-}
-
-// =====================
-// Questions
-// =====================
-export async function fetchQuestions() {
-  try {
-    const res = await fetch(`${API_BASE}/questions`);
-    if (!res.ok) throw new Error("Failed to fetch questions");
-    return res.json();
+    const res = await axios.get(`${API_BASE}/questions`);
+    return res.data;
   } catch (err) {
     console.error("Error fetching questions:", err);
     return [];
   }
-}
+};
 
-// =====================
-// Scores
-// =====================
-export async function fetchScoreboard() {
+export const uploadQuestions = async (file) => {
   try {
-    const res = await fetch(`${API_BASE}/scoreboard`);
-    if (!res.ok) throw new Error("Failed to fetch scoreboard");
-    return res.json();
-  } catch (err) {
-    console.error("Error fetching scoreboard:", err);
-    return [];
-  }
-}
+    const formData = new FormData();
+    formData.append("file", file);
 
-// =====================
-// File Upload
-// =====================
-export async function uploadQuestions(file) {
-  const formData = new FormData();
-  formData.append("file", file);
-
-  try {
-    const res = await fetch(`${API_BASE}/questions/upload`, {
-      method: "POST",
-      body: formData,
+    const res = await axios.post(`${API_BASE}/questions/upload`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
     });
 
-    if (!res.ok) throw new Error("Failed to upload file");
-
-    return res.json();
+    return res.data; // expected { uploaded: number }
   } catch (err) {
     console.error("Error uploading questions:", err);
     throw err;
   }
-}
+};
+
+// TEAMS
+export const fetchTeams = async () => {
+  try {
+    const res = await axios.get(`${API_BASE}/teams`);
+    return res.data;
+  } catch (err) {
+    console.error("Error fetching teams:", err);
+    return [];
+  }
+};
+
+export const createTeam = async (team) => {
+  try {
+    const res = await axios.post(`${API_BASE}/teams`, team);
+    return res.data;
+  } catch (err) {
+    console.error("Error creating team:", err);
+    throw err;
+  }
+};
+
+export const deleteTeam = async (teamId) => {
+  try {
+    const res = await axios.delete(`${API_BASE}/teams/${teamId}`);
+    return res.data;
+  } catch (err) {
+    console.error("Error deleting team:", err);
+    throw err;
+  }
+};
+
+// SCORES
+export const fetchScoreboard = async () => {
+  try {
+    const res = await axios.get(`${API_BASE}/scores`);
+    return res.data;
+  } catch (err) {
+    console.error("Error fetching scoreboard:", err);
+    return [];
+  }
+};
