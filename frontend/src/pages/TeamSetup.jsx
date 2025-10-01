@@ -8,6 +8,7 @@ function TeamSetup() {
   const [fileName, setFileName] = useState("");
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState(""); // New state for errors
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -15,20 +16,36 @@ function TeamSetup() {
   }, []);
 
   const loadTeams = async () => {
-    const data = await fetchTeams();
-    setTeams(data);
+    try {
+      const data = await fetchTeams();
+      setTeams(data);
+      setError(""); // Clear any previous error
+    } catch (err) {
+      console.error(err);
+      setError("Failed to load teams. Please try again.");
+    }
   };
 
   const addTeam = async () => {
     if (!teamName.trim()) return;
-    await createTeam({ name: teamName });
-    setTeamName("");
-    loadTeams();
+    try {
+      await createTeam({ name: teamName });
+      setTeamName("");
+      loadTeams();
+    } catch (err) {
+      console.error(err);
+      setError("Failed to add team. Please try again.");
+    }
   };
 
   const removeTeam = async (id) => {
-    await deleteTeam(id);
-    loadTeams();
+    try {
+      await deleteTeam(id);
+      loadTeams();
+    } catch (err) {
+      console.error(err);
+      setError("Failed to remove team. Please try again.");
+    }
   };
 
   const handleFileChange = (e) => {
@@ -45,8 +62,10 @@ function TeamSetup() {
     try {
       const result = await uploadQuestions(file);
       alert(`Uploaded ${result.uploaded} questions ✅`);
+      setError(""); // Clear error on success
     } catch (err) {
-      alert("Upload failed ❌: " + err.message);
+      console.error(err);
+      setError("Upload failed ❌: " + err.message);
     } finally {
       setUploading(false);
     }
@@ -65,6 +84,13 @@ function TeamSetup() {
       <h2 className="text-5xl font-bold text-purple-800 text-center mb-12">
         Anglican Church Quiz Setup
       </h2>
+
+      {/* Display error if any */}
+      {error && (
+        <div className="mb-6 text-red-600 text-xl font-semibold">
+          {error}
+        </div>
+      )}
 
       {/* Team Input */}
       <div className="flex gap-6 mb-12">

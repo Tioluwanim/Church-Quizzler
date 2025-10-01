@@ -1,48 +1,88 @@
-const API_BASE = "https://church-quizzler.onrender.com"; // Adjust if backend runs elsewhere
+const API_BASE = "https://church-quizzler.onrender.com"; // adjust if backend URL differs
 
+// =====================
 // Teams
+// =====================
 export async function fetchTeams() {
-  const res = await fetch(`${API_BASE}/teams`);
-  return res.json();
+  try {
+    const res = await fetch(`${API_BASE}/teams`);
+    if (!res.ok) throw new Error("Failed to fetch teams");
+    return res.json();
+  } catch (err) {
+    console.error("Error fetching teams:", err);
+    return [];
+  }
 }
 
 export async function createTeam(team) {
-  const res = await fetch(`${API_BASE}/teams`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(team),
-  });
-  return res.json();
+  try {
+    const res = await fetch(`${API_BASE}/teams`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(team),
+    });
+    if (!res.ok) throw new Error("Failed to create team");
+    return res.json();
+  } catch (err) {
+    console.error("Error creating team:", err);
+  }
 }
 
 export async function deleteTeam(id) {
-  await fetch(`${API_BASE}/teams/${id}`, { method: "DELETE" });
+  try {
+    const res = await fetch(`${API_BASE}/teams/${id}`, { method: "DELETE" });
+    if (!res.ok) throw new Error("Failed to delete team");
+  } catch (err) {
+    console.error("Error deleting team:", err);
+  }
 }
 
+// =====================
 // Questions
+// =====================
 export async function fetchQuestions() {
-  const res = await fetch(`${API_BASE}/questions`);
-  return res.json();
+  try {
+    const res = await fetch(`${API_BASE}/questions`);
+    if (!res.ok) throw new Error("Failed to fetch questions");
+    return res.json();
+  } catch (err) {
+    console.error("Error fetching questions:", err);
+    return [];
+  }
 }
 
+// =====================
 // Scores
+// =====================
 export async function fetchScoreboard() {
-  const res = await fetch(`${API_BASE}/scoreboard`);
-  return res.json();
+  try {
+    const res = await fetch(`${API_BASE}/scoreboard`);
+    if (!res.ok) throw new Error("Failed to fetch scoreboard");
+    return res.json();
+  } catch (err) {
+    console.error("Error fetching scoreboard:", err);
+    return [];
+  }
 }
-// Upload questions file
+
+// =====================
+// File Upload
+// =====================
 export async function uploadQuestions(file) {
   const formData = new FormData();
   formData.append("file", file);
 
-  const res = await fetch(`${API_BASE}/questions/upload`, {
-    method: "POST",
-    body: formData,
-  });
+  try {
+    const res = await fetch(`${API_BASE}/questions/upload`, {
+      method: "POST",
+      body: formData,
+    });
 
-  if (!res.ok) {
-    throw new Error("Failed to upload file");
+    if (!res.ok) throw new Error("Failed to upload file");
+
+    return res.json();
+  } catch (err) {
+    console.error("Error uploading questions:", err);
+    throw err;
   }
-
-  return res.json();
 }

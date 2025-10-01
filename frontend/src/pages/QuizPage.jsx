@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
 import { fetchQuestions, fetchTeams, fetchScoreboard } from "../api";
 
-const API_BASE = "https://church-quizzler.onrender.com"; // adjust if backend URL differs
-
 function QuizPage() {
   const [questions, setQuestions] = useState([]);
   const [teams, setTeams] = useState([]);
@@ -13,22 +11,27 @@ function QuizPage() {
   const [scoreboard, setScoreboard] = useState([]);
   const [quizFinished, setQuizFinished] = useState(false);
 
-  // Load questions + teams on mount
+  // Load questions + teams
   useEffect(() => {
-    const load = async () => {
-      const qs = await fetchQuestions();
-      const ts = await fetchTeams();
-      setQuestions(qs);
-      setTeams(ts);
+    const loadData = async () => {
+      try {
+        const qs = await fetchQuestions();
+        const ts = await fetchTeams();
+        setQuestions(qs);
+        setTeams(ts);
+      } catch (err) {
+        console.error("Failed to load questions or teams:", err);
+        alert("Failed to load data. Make sure the backend is running.");
+      }
     };
-    load();
+    loadData();
   }, []);
 
   // Timer countdown
   useEffect(() => {
     if (!selectedQuestion || timeLeft <= 0) return;
     const timer = setInterval(() => {
-      setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0));
+      setTimeLeft(prev => (prev > 0 ? prev - 1 : 0));
     }, 1000);
     return () => clearInterval(timer);
   }, [timeLeft, selectedQuestion]);
@@ -39,13 +42,11 @@ function QuizPage() {
     setTimeLeft(30);
   };
 
-  const revealAnswer = () => {
-    setShowAnswer(true);
-  };
+  const revealAnswer = () => setShowAnswer(true);
 
   const awardPoints = async (team) => {
     try {
-      const res = await fetch(`${API_BASE}/scores`, {
+      const res = await fetch(`${process.env.REACT_APP_API_BASE || ""}/scores`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -56,28 +57,29 @@ function QuizPage() {
       });
       if (!res.ok) throw new Error("Failed to award points");
 
-      setUsedQuestions((prev) => ({
+      setUsedQuestions(prev => ({
         ...prev,
         [selectedQuestion.id]: team.color || "#6A0DAD",
       }));
-
-
       setSelectedQuestion(null);
     } catch (err) {
       alert("Error awarding points: " + err.message);
     }
   };
 
-
   const finishQuiz = async () => {
-    const data = await fetchScoreboard();
-    setScoreboard(data);
-    setQuizFinished(true);
+    try {
+      const data = await fetchScoreboard();
+      setScoreboard(data);
+      setQuizFinished(true);
+    } catch (err) {
+      alert("Failed to fetch scoreboard: " + err.message);
+    }
   };
 
-  // ==============================
-  // FULL SCREEN RENDER
-  // ==============================
+  // ============================
+  // RENDER
+  // ============================
   if (quizFinished) {
     return (
       <div className="w-screen h-screen flex flex-col items-center justify-center bg-gradient-to-r from-yellow-100 via-purple-100 to-indigo-100 p-10 font-serif">
@@ -101,7 +103,6 @@ function QuizPage() {
     <div className="w-screen h-screen flex flex-col bg-gradient-to-r from-indigo-100 via-purple-50 to-yellow-100 p-8 font-serif">
       {!selectedQuestion ? (
         <>
-          {/* Question Grid */}
           <h1 className="text-5xl font-bold text-center text-purple-800 mb-8">
             📖 Select a Question
           </h1>
@@ -124,8 +125,6 @@ function QuizPage() {
               </button>
             ))}
           </div>
-
-          {/* Finish Button */}
           <div className="text-center mt-8">
             <button
               onClick={finishQuiz}
@@ -137,19 +136,14 @@ function QuizPage() {
         </>
       ) : (
         <div className="flex flex-col flex-1 justify-center items-center">
-          {/* Timer */}
           <div className="mb-8">
             <div className="px-8 py-4 bg-purple-600 text-white text-3xl font-semibold rounded-full shadow-lg">
               ⏳ {timeLeft}s
             </div>
           </div>
-
-          {/* Question */}
           <p className="text-4xl font-bold text-center text-gray-800 mb-10 max-w-3xl">
             {selectedQuestion.text}
           </p>
-
-          {/* Answer */}
           {showAnswer ? (
             <p className="text-center text-green-600 text-3xl font-semibold mb-10">
               ✅ {selectedQuestion.answer}
@@ -162,8 +156,6 @@ function QuizPage() {
               Show Answer
             </button>
           )}
-
-          {/* Award Points */}
           {showAnswer && (
             <div className="mt-10 flex gap-4 flex-wrap justify-center">
               {teams.map((team) => (

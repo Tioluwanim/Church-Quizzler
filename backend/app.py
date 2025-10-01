@@ -14,7 +14,6 @@ import PyPDF2
 from database.db import Base, engine, SessionLocal
 from database import crud, models
 
-
 # =====================
 # App setup
 # =====================
@@ -22,8 +21,9 @@ UPLOAD_FOLDER = "uploads"
 ALLOWED_EXTENSIONS = {"txt", "docx", "pdf"}
 
 app = FastAPI(title="Church Quiz API", version="1.0")
-frontend_build_path = os.path.join(os.path.dirname(__file__), "../frontend/dist")
+api_app = FastAPI(title="API")  # Sub-application for API routes
 
+frontend_build_path = os.path.join(os.path.dirname(__file__), "../frontend/dist")
 if not os.path.exists(frontend_build_path):
     raise RuntimeError(f"Frontend build folder not found: {frontend_build_path}")
 
@@ -37,6 +37,7 @@ app.mount("/", StaticFiles(directory=frontend_build_path, html=True), name="fron
 @app.get("/{full_path:path}")
 def catch_all(full_path: str):
     return FileResponse(os.path.join(frontend_build_path, "index.html"))
+
 # Enable CORS
 app.add_middleware(
     CORSMiddleware,
@@ -107,29 +108,29 @@ class ScoreOut(BaseModel):
 # =====================
 # TEAM ROUTES
 # =====================
-@app.post("/teams", response_model=TeamOut, tags=["Teams"])
+@api_app.post("/teams", response_model=TeamOut, tags=["Teams"])
 def create_team(team: TeamCreate, db: Session = Depends(get_db)):
     return crud.create_team(db, name=team.name, color=team.color or "#6A0DAD")
 
-@app.get("/teams", response_model=List[TeamOut], tags=["Teams"])
+@api_app.get("/teams", response_model=List[TeamOut], tags=["Teams"])
 def get_teams(db: Session = Depends(get_db)):
     return crud.get_teams(db)
 
-@app.get("/teams/{team_id}", response_model=TeamOut, tags=["Teams"])
+@api_app.get("/teams/{team_id}", response_model=TeamOut, tags=["Teams"])
 def get_team(team_id: int, db: Session = Depends(get_db)):
     team = crud.get_team(db, team_id)
     if not team:
         raise HTTPException(status_code=404, detail="Team not found")
     return team
 
-@app.put("/teams/{team_id}", response_model=TeamOut, tags=["Teams"])
+@api_app.put("/teams/{team_id}", response_model=TeamOut, tags=["Teams"])
 def update_team(team_id: int, team: TeamCreate, db: Session = Depends(get_db)):
     updated = crud.update_team(db, team_id, new_name=team.name, new_color=team.color)
     if not updated:
         raise HTTPException(status_code=404, detail="Team not found")
     return updated
 
-@app.delete("/teams/{team_id}", tags=["Teams"])
+@api_app.delete("/teams/{team_id}", tags=["Teams"])
 def delete_team(team_id: int, db: Session = Depends(get_db)):
     deleted = crud.delete_team(db, team_id)
     if not deleted:
@@ -139,7 +140,7 @@ def delete_team(team_id: int, db: Session = Depends(get_db)):
 # =====================
 # QUESTION ROUTES
 # =====================
-@app.post("/questions", response_model=QuestionOut, tags=["Questions"])
+@api_app.post("/questions", response_model=QuestionOut, tags=["Questions"])
 def create_question(question: QuestionCreate, db: Session = Depends(get_db)):
     return crud.create_question(
         db,
@@ -149,18 +150,18 @@ def create_question(question: QuestionCreate, db: Session = Depends(get_db)):
         points=question.points,
     )
 
-@app.get("/questions", response_model=List[QuestionOut], tags=["Questions"])
+@api_app.get("/questions", response_model=List[QuestionOut], tags=["Questions"])
 def get_questions(db: Session = Depends(get_db)):
     return crud.get_questions(db)
 
-@app.get("/questions/{question_id}", response_model=QuestionOut, tags=["Questions"])
+@api_app.get("/questions/{question_id}", response_model=QuestionOut, tags=["Questions"])
 def get_question(question_id: int, db: Session = Depends(get_db)):
     q = crud.get_question(db, question_id)
     if not q:
         raise HTTPException(status_code=404, detail="Question not found")
     return q
 
-@app.put("/questions/{question_id}", response_model=QuestionOut, tags=["Questions"])
+@api_app.put("/questions/{question_id}", response_model=QuestionOut, tags=["Questions"])
 def update_question(question_id: int, question: QuestionCreate, db: Session = Depends(get_db)):
     updated = crud.update_question(
         db,
@@ -174,7 +175,7 @@ def update_question(question_id: int, question: QuestionCreate, db: Session = De
         raise HTTPException(status_code=404, detail="Question not found")
     return updated
 
-@app.delete("/questions/{question_id}", tags=["Questions"])
+@api_app.delete("/questions/{question_id}", tags=["Questions"])
 def delete_question(question_id: int, db: Session = Depends(get_db)):
     deleted = crud.delete_question(db, question_id)
     if not deleted:
@@ -184,7 +185,7 @@ def delete_question(question_id: int, db: Session = Depends(get_db)):
 # =====================
 # FILE UPLOAD
 # =====================
-@app.post("/questions/upload", tags=["File Uploads"])
+@api_app.post("/questions/upload", tags=["File Uploads"])
 def upload_questions(file: UploadFile = File(...), db: Session = Depends(get_db)):
     filename = secure_filename(file.filename)
     ext = filename.rsplit(".", 1)[1].lower()
@@ -226,14 +227,17 @@ def upload_questions(file: UploadFile = File(...), db: Session = Depends(get_db)
 # =====================
 # SCORE ROUTES
 # =====================
-@app.post("/scores", response_model=ScoreOut, tags=["Scores"])
+@api_app.post("/scores", response_model=ScoreOut, tags=["Scores"])
 def award_score(score: ScoreCreate, db: Session = Depends(get_db)):
     return crud.award_points(db, team_id=score.team_id, question_id=score.question_id, points=score.points)
 
-@app.get("/teams/{team_id}/scores", response_model=List[ScoreOut], tags=["Scores"])
+@api_app.get("/teams/{team_id}/scores", response_model=List[ScoreOut], tags=["Scores"])
 def team_scores(team_id: int, db: Session = Depends(get_db)):
     return crud.get_scores_for_team(db, team_id)
 
-@app.get("/scoreboard", tags=["Scores"])
+@api_app.get("/scoreboard", tags=["Scores"])
 def scoreboard(db: Session = Depends(get_db)):
     return crud.get_scoreboard(db)
+
+# Mount API under /api
+app.mount("/api", api_app)

@@ -1,30 +1,35 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import { fetchQuestions } from "../api";
 
 function ReviewPage() {
   const [questions, setQuestions] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchQuestions();
+    const loadQuestions = async () => {
+      try {
+        const data = await fetchQuestions();
+        setQuestions(data);
+      } catch (err) {
+        console.error("Error loading questions:", err);
+        alert("Failed to load questions. Make sure the backend is running.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadQuestions();
   }, []);
 
-  const fetchQuestions = async () => {
-    try {
-      const res = await axios.get("https://church-quizzler.onrender.com/questions");
-      setQuestions(res.data);
-    } catch (err) {
-      console.error("Error loading questions:", err);
-    }
-  };
-
   return (
-    <div className="min-h-screen p-12 bg-gradient-to-b from-purple-50 to-yellow-50">
+    <div className="min-h-screen p-12 bg-gradient-to-b from-purple-50 to-yellow-50 font-serif">
       <h1 className="text-4xl font-bold mb-10 text-center text-purple-800">
         📖 Review Questions
       </h1>
 
       <div className="max-w-4xl mx-auto space-y-6">
-        {questions.length === 0 ? (
+        {loading ? (
+          <p className="text-gray-500 text-center text-xl">Loading questions...</p>
+        ) : questions.length === 0 ? (
           <p className="text-gray-500 text-center text-xl">
             No questions available
           </p>
