@@ -3,7 +3,7 @@ import { fetchTeams, fetchCategories, fetchQuestionsByCategory } from "../api";
 import { useNavigate, useParams } from "react-router-dom";
 
 function SelectTeam() {
-  const { categoryId } = useParams(); // categoryId from URL
+  const { categoryId } = useParams(); 
   const [categories, setCategories] = useState([]);
   const [teams, setTeams] = useState([]);
   const [questions, setQuestions] = useState([]);
@@ -18,7 +18,6 @@ function SelectTeam() {
       try {
         const catData = await fetchCategories();
         setCategories(catData);
-        // If no category is selected, pick the first one
         if (!selectedCategoryId && catData.length > 0) {
           setSelectedCategoryId(Number(catData[0].id));
         }
@@ -49,7 +48,7 @@ function SelectTeam() {
       try {
         const questionData = await fetchQuestionsByCategory(selectedCategoryId);
         setQuestions(questionData);
-        setSelectedTeamId(null); // reset team selection when category changes
+        setSelectedTeamId(null);
       } catch (err) {
         console.error("Failed to fetch questions:", err);
       }
@@ -58,7 +57,7 @@ function SelectTeam() {
   }, [selectedCategoryId]);
 
   const handleSelectTeam = (teamId) => {
-    setSelectedTeamId(Number(teamId)); // highlight team + show questions
+    setSelectedTeamId(Number(teamId));
   };
 
   const handleSelectQuestion = (questionId) => {
@@ -77,12 +76,12 @@ function SelectTeam() {
             key={cat.id}
             onClick={() => setSelectedCategoryId(Number(cat.id))}
             className={`px-4 py-2 rounded-full font-semibold transition ${
-              selectedCategoryId === Number(cat.id)
+              selectedCategoryId === cat.id
                 ? "bg-yellow-400 text-purple-800"
                 : "bg-purple-600 text-white hover:bg-purple-700"
             }`}
           >
-            {cat.name}
+            {cat.name || cat.category_name || `Category ${cat.id}`}
           </button>
         ))}
       </div>
@@ -94,25 +93,36 @@ function SelectTeam() {
             <div
               onClick={() => handleSelectTeam(team.id)}
               className={`p-4 rounded-2xl font-bold text-white cursor-pointer shadow-lg transition transform hover:scale-105 ${
-                selectedTeamId === Number(team.id) ? "ring-4 ring-yellow-400" : ""
+                selectedTeamId === team.id ? "ring-4 ring-yellow-400" : ""
               }`}
               style={{ backgroundColor: team.color || "#6A0DAD" }}
             >
               {team.name || `Team ${team.id}`}
             </div>
 
-            {/* Show question numbers if this team is selected */}
-            {selectedTeamId === Number(team.id) && questions.length > 0 && (
+            {/* Question buttons for selected team */}
+            {selectedTeamId === team.id && questions.length > 0 && (
               <div className="mt-3 flex flex-wrap justify-center gap-2">
-                {questions.map((q, idx) => (
-                  <button
-                    key={q.id}
-                    onClick={() => handleSelectQuestion(q.id)}
-                    className="px-4 py-2 bg-yellow-400 text-purple-800 rounded-lg hover:bg-yellow-500 transition"
-                  >
-                    Q{idx + 1}
-                  </button>
-                ))}
+                {questions.map((q, idx) => {
+                  const answeredKey = `answered_${selectedCategoryId}_${selectedTeamId}`;
+                  const answered = JSON.parse(localStorage.getItem(answeredKey) || "[]");
+                  const alreadyAnswered = answered.includes(q.id);
+
+                  return (
+                    <button
+                      key={q.id}
+                      onClick={() => !alreadyAnswered && handleSelectQuestion(q.id)}
+                      disabled={alreadyAnswered}
+                      className={`px-4 py-2 rounded-lg font-bold transition ${
+                        alreadyAnswered
+                          ? "bg-gray-400 text-gray-700 cursor-not-allowed"
+                          : "bg-yellow-400 text-purple-800 hover:bg-yellow-500"
+                      }`}
+                    >
+                      Q{idx + 1}
+                    </button>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -120,9 +130,7 @@ function SelectTeam() {
       </div>
 
       {selectedCategoryId && questions.length === 0 && (
-        <p className="text-center mt-4 text-gray-500">
-          No questions available for this category.
-        </p>
+        <p className="text-center mt-4 text-gray-500">No questions available for this category.</p>
       )}
     </div>
   );
