@@ -58,7 +58,7 @@ function SelectTeam() {
   }, [selectedCategoryId]);
 
   const handleSelectTeam = (teamId) => {
-    setSelectedTeamId(Number(teamId)); // make sure it's always a number
+    setSelectedTeamId(Number(teamId)); // highlight team + show questions
   };
 
   const handleSelectQuestion = (questionId) => {
@@ -82,7 +82,7 @@ function SelectTeam() {
                 : "bg-purple-600 text-white hover:bg-purple-700"
             }`}
           >
-            {cat.name || cat.category_name || `Category ${cat.id}`} {/* fallback */}
+            {cat.name}
           </button>
         ))}
       </div>
@@ -98,7 +98,7 @@ function SelectTeam() {
               }`}
               style={{ backgroundColor: team.color || "#6A0DAD" }}
             >
-              {team.name || `Team ${team.id}`} {/* fallback */}
+              {team.name || `Team ${team.id}`}
             </div>
 
             {/* Show question numbers if this team is selected */}

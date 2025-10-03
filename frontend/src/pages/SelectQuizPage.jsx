@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { fetchCategories } from "../api";
+import { fetchCategories, fetchTeams } from "../api";
 import { useNavigate } from "react-router-dom";
 
 function SelectQuizPage() {
@@ -21,14 +21,17 @@ function SelectQuizPage() {
     loadCategories();
   }, []);
 
-  const handleSelectCategory = (category) => {
-    // Ensure "all_teams" exists in localStorage
-    if (!localStorage.getItem("all_teams")) {
-      localStorage.setItem("all_teams", JSON.stringify([]));
-    }
+  const handleSelectCategory = async (category) => {
+    try {
+      // Fetch all teams so we can store them in localStorage for tracking
+      const teams = await fetchTeams();
+      localStorage.setItem("all_teams", JSON.stringify(teams.map((t) => t.id)));
 
-    // Navigate to SelectTeam page with categoryId in URL
-    navigate(`/select-team/${category.id}`);
+      // Navigate to SelectTeam page with categoryId in URL
+      navigate(`/select-team/${category.id}`);
+    } catch (err) {
+      console.error("Failed to load teams:", err);
+    }
   };
 
   return (
@@ -47,7 +50,7 @@ function SelectQuizPage() {
               onClick={() => handleSelectCategory(cat)}
               className="p-4 bg-purple-600 text-white rounded-xl text-center hover:bg-purple-700 transition font-semibold shadow-md"
             >
-              {cat.name || cat.category_name || `Category ${cat.id}`} {/* fallback */}
+              {cat.name || cat.category_name || `Category ${cat.id}`}
             </button>
           ))}
         </div>

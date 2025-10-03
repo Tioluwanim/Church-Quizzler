@@ -169,10 +169,14 @@ def get_categories(db: Session = Depends(get_db)):
     return [{"id": i + 1, "name": str(c)} for i, c in enumerate(categories)]
 
 
-@app.get("/categories/{category}/questions", response_model=List[QuestionOut])
-def get_questions_by_category(category: str, db: Session = Depends(get_db)):
-    return crud.get_questions_by_category(db, category)
+@app.get("/categories/{category_id}/questions", response_model=List[QuestionOut])
+def get_questions_by_category(category_id: int, db: Session = Depends(get_db)):
+    categories = crud.get_categories_from_questions(db)
+    if category_id < 1 or category_id > len(categories):
+        raise HTTPException(status_code=404, detail="Category not found")
 
+    category_name = categories[category_id - 1]  # map id back to category name
+    return crud.get_questions_by_category(db, category_name)
 
 @app.post("/questions/upload")
 def upload_questions(file: UploadFile = File(...), db: Session = Depends(get_db)):

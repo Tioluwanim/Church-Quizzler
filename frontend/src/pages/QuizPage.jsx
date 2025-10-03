@@ -22,12 +22,12 @@ function QuizPage() {
       setQuestions(qData);
 
       const teams = await fetchTeams();
-      const selectedTeam = teams.find(t => t.id === parseInt(teamId));
+      const selectedTeam = teams.find((t) => t.id === parseInt(teamId));
       setTeam(selectedTeam);
 
       // Set starting question index based on questionId in URL
       if (questionId) {
-        const idx = qData.findIndex(q => q.id === parseInt(questionId));
+        const idx = qData.findIndex((q) => q.id === parseInt(questionId));
         setCurrentIndex(idx >= 0 ? idx : 0);
       }
 
@@ -75,7 +75,7 @@ function QuizPage() {
       setShowAnswer(false);
       setAnswerRevealed(false);
     } else {
-      // Mark team done
+      // Mark team done for this category
       const key = `answered_${categoryId}`;
       let answered = JSON.parse(localStorage.getItem(key) || "[]");
       if (!answered.includes(team.id)) answered.push(team.id);
@@ -87,7 +87,7 @@ function QuizPage() {
         localStorage.removeItem(key);
         navigate("/select-quiz");
       } else {
-        navigate(`/select-team?categoryId=${categoryId}`);
+        navigate(`/select-team/${categoryId}`); // ✅ fixed: route param instead of query param
       }
     }
   };
