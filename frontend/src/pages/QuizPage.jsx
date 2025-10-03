@@ -65,83 +65,74 @@ function QuizPage() {
 
   const awardPoints = async (isCorrect) => {
     if (isCorrect) {
-      // ✅ Correct call with 3 args
       await submitAnswer(team.id, q.id, q.points);
     }
 
-    // Next question or next team
-    if (currentIndex + 1 < questions.length) {
-      setCurrentIndex(currentIndex + 1);
-      setTimeLeft(team.timer_seconds || 30);
-      setShowAnswer(false);
-      setAnswerRevealed(false);
-    } else {
-      // Mark team done for this category
-      const key = `answered_${categoryId}`;
-      let answered = JSON.parse(localStorage.getItem(key) || "[]");
-      if (!answered.includes(team.id)) answered.push(team.id);
-      localStorage.setItem(key, JSON.stringify(answered));
+    // ✅ Mark this question as answered for this team
+    const key = `answered_${categoryId}_${team.id}`;
+    let answered = JSON.parse(localStorage.getItem(key) || "[]");
+    if (!answered.includes(q.id)) answered.push(q.id);
+    localStorage.setItem(key, JSON.stringify(answered));
 
-      // Check if all teams are done
-      const allTeams = JSON.parse(localStorage.getItem("all_teams") || "[]");
-      if (answered.length >= allTeams.length) {
-        localStorage.removeItem(key);
-        navigate("/select-quiz");
-      } else {
-        navigate(`/select-team/${categoryId}`);
-      }
-    }
+    // ✅ After awarding points, go back to SelectTeam
+    navigate(`/select-team/${categoryId}`);
   };
 
   return (
-    <div className="max-w-3xl mx-auto p-6 bg-white rounded-xl shadow">
-      <h1 className="text-2xl font-bold mb-4">
-        Team: {team.name} | Question {currentIndex + 1}/{questions.length}
-      </h1>
-      <p className="mb-4 text-lg">{q.text}</p>
+    <div className="max-w-7xl mx-auto p-8 bg-white rounded-xl shadow flex flex-col lg:flex-row gap-8">
+      {/* LEFT SIDE: Question */}
+      <div className="flex-1">
+        <h1 className="text-3xl font-extrabold mb-6 text-purple-900">
+          Team: {team.name} | Question {currentIndex + 1}/{questions.length}
+        </h1>
 
-      {/* ✅ Show answer under question when revealed */}
-      {showAnswer && (
-        <p className="mb-4 text-green-700 font-bold">
-          ✅ Correct Answer: {q.answer}
-        </p>
-      )}
+        <p className="mb-6 text-2xl font-bold text-gray-900">{q.text}</p>
 
-      <div className="grid gap-3 mb-6">
-        {q.options?.map((opt, idx) => (
-          <div
-            key={idx}
-            className={`p-3 rounded-lg border text-center font-medium ${
-              showAnswer && opt === q.answer
-                ? "bg-green-200 border-green-600"
-                : "bg-purple-100 border-purple-300"
-            }`}
-          >
-            {opt}
-          </div>
-        ))}
-      </div>
+        {showAnswer && (
+          <p className="mb-6 text-green-700 font-extrabold text-xl">
+            ✅ Correct Answer: {q.answer}
+          </p>
+        )}
 
-      <div className="text-center text-xl font-bold mb-4">
-        ⏳ {timeLeft > 0 ? timeLeft : 0}s
-      </div>
-
-      {answerRevealed && (
-        <div className="flex justify-center gap-6">
-          <button
-            onClick={() => awardPoints(true)}
-            className="px-6 py-3 bg-green-600 text-white rounded-full font-bold hover:bg-green-700"
-          >
-            Correct ✅
-          </button>
-          <button
-            onClick={() => awardPoints(false)}
-            className="px-6 py-3 bg-red-600 text-white rounded-full font-bold hover:bg-red-700"
-          >
-            Wrong ❌
-          </button>
+        <div className="grid gap-4">
+          {q.options?.map((opt, idx) => (
+            <div
+              key={idx}
+              className={`p-4 rounded-lg border text-center text-lg font-bold transition ${
+                showAnswer && opt === q.answer
+                  ? "bg-green-200 border-green-600"
+                  : "bg-purple-100 border-purple-300"
+              }`}
+            >
+              {opt}
+            </div>
+          ))}
         </div>
-      )}
+      </div>
+
+      {/* RIGHT SIDE: Timer + Buttons */}
+      <div className="w-full lg:w-1/3 flex flex-col items-center justify-center gap-6">
+        <div className="text-5xl font-extrabold text-purple-800 mb-6">
+          ⏳ {timeLeft > 0 ? timeLeft : 0}s
+        </div>
+
+        {answerRevealed && (
+          <div className="flex flex-col gap-6 w-full">
+            <button
+              onClick={() => awardPoints(true)}
+              className="px-8 py-4 bg-green-600 text-white rounded-xl font-extrabold text-xl hover:bg-green-700 shadow-lg"
+            >
+              Correct ✅
+            </button>
+            <button
+              onClick={() => awardPoints(false)}
+              className="px-8 py-4 bg-red-600 text-white rounded-xl font-extrabold text-xl hover:bg-red-700 shadow-lg"
+            >
+              Wrong ❌
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
