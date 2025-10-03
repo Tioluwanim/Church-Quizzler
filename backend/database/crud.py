@@ -16,7 +16,6 @@ def get_team(db: Session, team_id: int):
     return db.query(Team).filter(Team.id == team_id).first()
 
 def get_teams(db: Session):
-    # ✅ No limit: fetch all teams
     return db.query(Team).all()
 
 def update_team(db: Session, team_id: int, new_name: str = None, new_color: str = None, new_timer: int = None):
@@ -86,19 +85,37 @@ def get_scores_for_team(db: Session, team_id: int):
 
 def get_scoreboard(db: Session):
     results = (
-        db.query(Team.name.label("team_name"),
-                 func.coalesce(func.sum(Score.points_awarded), 0).label("total_points"))
-        .outerjoin(Score, Team.id == Score.team_id)
+        db.query(
+            Team.id.label("team_id"),
+            Team.name.label("team_name"),
+            func.coalesce(func.sum(Score.points_awarded), 0).label("total_points")
+        )
+        .outerjoin(Score, Team.id == Score.team_id)  # ✅ outer join so teams with no scores still show
         .group_by(Team.id)
         .order_by(func.coalesce(func.sum(Score.points_awarded), 0).desc())
         .all()
     )
-    return [{"team_name": r.team_name, "total_points": r.total_points} for r in results]
-# Get unique categories from questions table
+    return [{"team_id": r.team_id, "team_name": r.team_name, "total_points": r.total_points} for r in results]
+
 def get_categories_from_questions(db: Session):
     categories = db.query(distinct(Question.category)).all()
     return [c[0] for c in categories if c[0] is not None]
 
-# Get questions by category
 def get_questions_by_category(db: Session, category: str):
     return db.query(Question).filter(Question.category == category).all()
+
+def get_scoreboard_by_category(db: Session, category: str):
+    results = (
+        db.query(
+            Team.id.label("team_id"),
+            Team.name.label("team_name"),
+            func.coalesce(func.sum(Score.points_awarded), 0).label("points")
+        )
+        .outerjoin(Score, Team.id == Score.team_id)
+        .outerjoin(Question, Score.question_id == Question.id)
+        .filter(Question.category == category)  # ✅ filter only this category
+        .group_by(Team.id)
+        .order_by(func.coalesce(func.sum(Score.points_awarded), 0).desc())
+        .all()
+    )
+    return [{"team_id": r.team_id, "team_name": r.team_name, "points": r.points} for r in results]

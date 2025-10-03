@@ -43,7 +43,7 @@ export async function deleteTeam(teamId) {
 export async function fetchCategories() {
   const res = await fetch(`${API_BASE}/categories`);
   if (!res.ok) throw new Error("Failed to fetch categories");
-  return res.json(); // ✅ backend already returns {id, name}
+  return res.json(); // backend already returns {id, name}
 }
 
 // --------------------
@@ -105,8 +105,8 @@ export async function awardScore(score) {
 }
 
 // alias for QuizPage.jsx compatibility
-export async function submitAnswer(teamId, questionId, points) {
-  return awardScore({ team_id: teamId, question_id: questionId, points });
+export async function submitAnswer({ team_id, question_id, points }) {
+  return awardScore({ team_id, question_id, points });
 }
 
 // --------------------
@@ -118,8 +118,9 @@ export async function fetchScoreboard() {
   return res.json();
 }
 
-export async function fetchScoreboardByCategory(categoryId) {
-  const res = await fetch(`${API_BASE}/scoreboard/category/${categoryId}`);
+// ✅ expects category name, not ID
+export async function fetchScoreboardByCategory(categoryName) {
+  const res = await fetch(`${API_BASE}/scoreboard/category/${encodeURIComponent(categoryName)}`);
   if (!res.ok) throw new Error("Failed to fetch scoreboard by category");
   return res.json();
 }

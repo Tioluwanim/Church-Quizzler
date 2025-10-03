@@ -21,7 +21,7 @@ from database import crud, models
 UPLOAD_FOLDER = "uploads"
 ALLOWED_EXTENSIONS = {"txt", "docx", "pdf"}
 
-app = FastAPI(title="Church Quiz API", version="1.1")
+app = FastAPI(title="Church Quiz API", version="1.2")
 
 # CORS
 app.add_middleware(
@@ -45,7 +45,6 @@ def get_db():
     finally:
         db.close()
 
-
 # =====================
 # Pydantic Schemas
 # =====================
@@ -58,7 +57,7 @@ class TeamOut(BaseModel):
     id: int
     name: str
     color: Optional[str]
-    timer_seconds: int   # ✅ include timer in responses
+    timer_seconds: int
 
     class Config:
         orm_mode = True
@@ -108,11 +107,9 @@ def create_team(team: TeamCreate, db: Session = Depends(get_db)):
         timer_seconds=team.timer_seconds
     )
 
-
 @app.get("/teams", response_model=List[TeamOut])
 def get_teams(db: Session = Depends(get_db)):
     return crud.get_teams(db)
-
 
 @app.get("/teams/{team_id}", response_model=TeamOut)
 def get_team(team_id: int, db: Session = Depends(get_db)):
@@ -121,7 +118,6 @@ def get_team(team_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Team not found")
     return team
 
-
 @app.put("/teams/{team_id}", response_model=TeamOut)
 def update_team(team_id: int, team: TeamCreate, db: Session = Depends(get_db)):
     updated = crud.update_team(
@@ -129,12 +125,11 @@ def update_team(team_id: int, team: TeamCreate, db: Session = Depends(get_db)):
         team_id,
         new_name=team.name,
         new_color=team.color,
-        new_timer=team.timer_seconds   # ✅ allow updating timer_seconds
+        new_timer=team.timer_seconds
     )
     if not updated:
         raise HTTPException(status_code=404, detail="Team not found")
     return updated
-
 
 @app.delete("/teams/{team_id}")
 def delete_team(team_id: int, db: Session = Depends(get_db)):
@@ -159,15 +154,10 @@ def create_question(question: QuestionCreate, db: Session = Depends(get_db)):
 def get_questions(db: Session = Depends(get_db)):
     return crud.get_questions(db)
 
-
 @app.get("/categories")
 def get_categories(db: Session = Depends(get_db)):
-    """
-    Return categories as [{id, name}], where id is just an index.
-    """
-    categories = crud.get_categories_from_questions(db)  # probably returns list of strings
+    categories = crud.get_categories_from_questions(db)
     return [{"id": i + 1, "name": str(c)} for i, c in enumerate(categories)]
-
 
 @app.get("/categories/{category_id}/questions", response_model=List[QuestionOut])
 def get_questions_by_category(category_id: int, db: Session = Depends(get_db)):
@@ -175,16 +165,11 @@ def get_questions_by_category(category_id: int, db: Session = Depends(get_db)):
     if category_id < 1 or category_id > len(categories):
         raise HTTPException(status_code=404, detail="Category not found")
 
-    category_name = categories[category_id - 1]  # map id back to category name
+    category_name = categories[category_id - 1]
     return crud.get_questions_by_category(db, category_name)
 
 @app.post("/questions/upload")
 def upload_questions(file: UploadFile = File(...), db: Session = Depends(get_db)):
-    """
-    Expected file format (each question on its own line):
-      Question text | Answer | Category | Points | option1,option2,option3,option4
-    Options field is optional. Category is optional.
-    """
     filename = secure_filename(file.filename)
     ext = filename.rsplit(".", 1)[1].lower()
     if ext not in ALLOWED_EXTENSIONS:
@@ -199,7 +184,6 @@ def upload_questions(file: UploadFile = File(...), db: Session = Depends(get_db)
             text = f.read()
     elif ext == "docx":
         doc = Document(filepath)
-        # join paragraphs with newline so we can parse lines consistently
         text = "\n".join([para.text for para in doc.paragraphs if para.text.strip()])
     elif ext == "pdf":
         pdf_reader = PyPDF2.PdfReader(filepath)
@@ -211,9 +195,7 @@ def upload_questions(file: UploadFile = File(...), db: Session = Depends(get_db)
     created = []
     for line in text.splitlines():
         line = line.strip()
-        if not line:
-            continue
-        if "|" not in line:
+        if not line or "|" not in line:
             continue
         parts = [p.strip() for p in line.split("|")]
         q_text = parts[0]
@@ -222,7 +204,6 @@ def upload_questions(file: UploadFile = File(...), db: Session = Depends(get_db)
         q_points = int(parts[3]) if len(parts) > 3 and parts[3].isdigit() else 10
         q_options = None
         if len(parts) > 4 and parts[4].strip():
-            # options comma-separated
             try:
                 q_options = json.loads(parts[4]) if (parts[4].strip().startswith("[") and parts[4].strip().endswith("]")) else [o.strip() for o in parts[4].split(",")]
             except Exception:
@@ -237,7 +218,6 @@ def upload_questions(file: UploadFile = File(...), db: Session = Depends(get_db)
         created.append(question)
     return {"uploaded": len(created), "questions": created}
 
-
 # =====================
 # SCORE ROUTES
 # =====================
@@ -251,28 +231,29 @@ def team_scores(team_id: int, db: Session = Depends(get_db)):
 
 @app.get("/scoreboard")
 def scoreboard(db: Session = Depends(get_db)):
+    """
+    Returns overall scoreboard (all teams always included).
+    """
     return crud.get_scoreboard(db)
 
 @app.get("/scoreboard/category/{category}")
 def scoreboard_by_category(category: str, db: Session = Depends(get_db)):
+    """
+    Returns scoreboard for a specific category (all teams always included).
+    """
     return crud.get_scoreboard_by_category(db, category)
 
 
 # =====================
-# OPTIONAL: serve frontend static files if built
-# - Commented / safe: only mount if dist exists
+# Serve frontend if built
 # =====================
 frontend_build_path = os.path.join(os.path.dirname(__file__), "../frontend/dist")
 if os.path.exists(frontend_build_path):
-    # serve assets under /static to avoid colliding with API routes
     static_assets = os.path.join(frontend_build_path, "assets")
     if os.path.exists(static_assets):
         app.mount("/assets", StaticFiles(directory=static_assets), name="assets")
     app.mount("/", StaticFiles(directory=frontend_build_path, html=True), name="frontend")
 
-    # fallback for client-side routing (this will only run if StaticFiles didn't serve the path)
     @app.get("/{full_path:path}")
     def catch_all(full_path: str):
         return FileResponse(os.path.join(frontend_build_path, "index.html"))
-
-# End of app.py
