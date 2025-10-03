@@ -34,9 +34,23 @@ function SelectQuizPage() {
     }
   };
 
+  const handleReset = () => {
+    localStorage.clear();
+    alert("✅ Quiz progress reset!");
+  };
+
   return (
     <div className="max-w-3xl mx-auto p-6 bg-white rounded-2xl shadow-md">
       <h1 className="text-2xl font-bold mb-6 text-center">📚 Select Quiz Session</h1>
+
+      <div className="flex justify-center mb-6">
+        <button
+          onClick={handleReset}
+          className="px-6 py-3 bg-red-600 text-white rounded-full font-semibold hover:bg-red-700 transition"
+        >
+          🔄 Reset Quiz
+        </button>
+      </div>
 
       {loading ? (
         <p className="text-center text-gray-500">Loading categories...</p>
