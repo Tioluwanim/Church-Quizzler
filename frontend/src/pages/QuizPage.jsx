@@ -38,21 +38,21 @@ function QuizPage() {
 
   // Timer
   useEffect(() => {
-    if (!questions.length || timeLeft <= 0 || !team) return;
+    if (!questions.length || !team) return;
+    if (timeLeft <= 0) return;
 
     const timer = setInterval(() => {
       setTimeLeft((t) => {
-        if (t > 0) tickSound.current.play();
-
-        if (t - 1 <= 0) {
+        if (t > 1) {
+          tickSound.current.play();
+          return t - 1;
+        } else {
           clearInterval(timer);
           endSound.current.play();
-          setTimeout(() => {
-            setShowAnswer(true);
-            setAnswerRevealed(true);
-          }, 1000);
+          setShowAnswer(true);
+          setAnswerRevealed(true);
+          return 0;
         }
-        return t - 1;
       });
     }, 1000);
 
@@ -65,7 +65,8 @@ function QuizPage() {
 
   const awardPoints = async (isCorrect) => {
     if (isCorrect) {
-      await submitAnswer({ team_id: team.id, question_id: q.id, points: q.points });
+      // ✅ Fixed call (pass 3 args, not an object)
+      await submitAnswer(team.id, q.id, q.points);
     }
 
     // Next question or next team
@@ -87,7 +88,7 @@ function QuizPage() {
         localStorage.removeItem(key);
         navigate("/select-quiz");
       } else {
-        navigate(`/select-team/${categoryId}`); // ✅ fixed: route param instead of query param
+        navigate(`/select-team/${categoryId}`);
       }
     }
   };
