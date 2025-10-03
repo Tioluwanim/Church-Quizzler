@@ -25,7 +25,6 @@ function QuizPage() {
       const selectedTeam = teams.find((t) => t.id === parseInt(teamId));
       setTeam(selectedTeam);
 
-      // Set starting question index based on questionId in URL
       if (questionId) {
         const idx = qData.findIndex((q) => q.id === parseInt(questionId));
         setCurrentIndex(idx >= 0 ? idx : 0);
@@ -68,8 +67,8 @@ function QuizPage() {
       await submitAnswer(team.id, q.id, q.points);
     }
 
-    // ✅ Mark this question as answered for this team
-    const key = `answered_${categoryId}_${team.id}`;
+    // ✅ Mark question as answered for ALL teams (global per category)
+    const key = `answered_${categoryId}`;
     let answered = JSON.parse(localStorage.getItem(key) || "[]");
     if (!answered.includes(q.id)) answered.push(q.id);
     localStorage.setItem(key, JSON.stringify(answered));

@@ -104,7 +104,8 @@ function SelectTeam() {
             {selectedTeamId === team.id && questions.length > 0 && (
               <div className="mt-3 flex flex-wrap justify-center gap-2">
                 {questions.map((q, idx) => {
-                  const answeredKey = `answered_${selectedCategoryId}_${selectedTeamId}`;
+                  // ✅ Check global answered questions for this category
+                  const answeredKey = `answered_${selectedCategoryId}`;
                   const answered = JSON.parse(localStorage.getItem(answeredKey) || "[]");
                   const alreadyAnswered = answered.includes(q.id);
 
