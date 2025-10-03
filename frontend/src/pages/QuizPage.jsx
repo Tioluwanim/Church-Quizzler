@@ -65,7 +65,7 @@ function QuizPage() {
 
   const awardPoints = async (isCorrect) => {
     if (isCorrect) {
-      // ✅ Fixed call (pass 3 args, not an object)
+      // ✅ Correct call with 3 args
       await submitAnswer(team.id, q.id, q.points);
     }
 
@@ -99,6 +99,13 @@ function QuizPage() {
         Team: {team.name} | Question {currentIndex + 1}/{questions.length}
       </h1>
       <p className="mb-4 text-lg">{q.text}</p>
+
+      {/* ✅ Show answer under question when revealed */}
+      {showAnswer && (
+        <p className="mb-4 text-green-700 font-bold">
+          ✅ Correct Answer: {q.answer}
+        </p>
+      )}
 
       <div className="grid gap-3 mb-6">
         {q.options?.map((opt, idx) => (
