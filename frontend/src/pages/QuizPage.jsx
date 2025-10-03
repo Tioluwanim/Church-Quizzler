@@ -48,8 +48,7 @@ function QuizPage() {
         } else {
           clearInterval(timer);
           endSound.current.play();
-          setShowAnswer(true);
-          setAnswerRevealed(true);
+          revealAnswer();
           return 0;
         }
       });
@@ -62,18 +61,25 @@ function QuizPage() {
 
   const q = questions[currentIndex];
 
+  // ✅ Reveal answer (for Stop button and timer end)
+  const revealAnswer = () => {
+    setShowAnswer(true);
+    setAnswerRevealed(true);
+    setTimeLeft(0);
+  };
+
   const awardPoints = async (isCorrect) => {
     if (isCorrect) {
       await submitAnswer(team.id, q.id, q.points);
     }
 
-    // ✅ Mark question as answered for ALL teams (global per category)
+    // Mark question as answered for all teams (global per category)
     const key = `answered_${categoryId}`;
     let answered = JSON.parse(localStorage.getItem(key) || "[]");
     if (!answered.includes(q.id)) answered.push(q.id);
     localStorage.setItem(key, JSON.stringify(answered));
 
-    // ✅ After awarding points, go back to SelectTeam
+    // Go back to SelectTeam
     navigate(`/select-team/${categoryId}`);
   };
 
@@ -114,6 +120,16 @@ function QuizPage() {
         <div className="text-5xl font-extrabold text-purple-800 mb-6">
           ⏳ {timeLeft > 0 ? timeLeft : 0}s
         </div>
+
+        {/* ✅ Stop button */}
+        {!answerRevealed && (
+          <button
+            onClick={revealAnswer}
+            className="px-6 py-3 bg-yellow-500 text-white rounded-xl font-bold text-lg hover:bg-yellow-600 shadow-lg"
+          >
+            ⏹ Stop
+          </button>
+        )}
 
         {answerRevealed && (
           <div className="flex flex-col gap-6 w-full">
