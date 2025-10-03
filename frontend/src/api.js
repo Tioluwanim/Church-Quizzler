@@ -40,22 +40,11 @@ export async function deleteTeam(teamId) {
 // --------------------
 // CATEGORIES
 // --------------------
-// --------------------
-// CATEGORIES
-// --------------------
 export async function fetchCategories() {
   const res = await fetch(`${API_BASE}/categories`);
   if (!res.ok) throw new Error("Failed to fetch categories");
-  
-  const data = await res.json();
-
-  // Normalize category objects to always have a `name` property
-  return data.map(cat => ({
-    id: cat.id,
-    name: cat.name || cat.category_name || `Category ${cat.id}`
-  }));
+  return res.json(); // ✅ backend already returns {id, name}
 }
-
 
 // --------------------
 // QUESTIONS

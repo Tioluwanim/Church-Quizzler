@@ -159,9 +159,15 @@ def create_question(question: QuestionCreate, db: Session = Depends(get_db)):
 def get_questions(db: Session = Depends(get_db)):
     return crud.get_questions(db)
 
+
 @app.get("/categories")
 def get_categories(db: Session = Depends(get_db)):
-    return crud.get_categories_from_questions(db)
+    """
+    Return categories as [{id, name}], where id is just an index.
+    """
+    categories = crud.get_categories_from_questions(db)  # probably returns list of strings
+    return [{"id": i + 1, "name": str(c)} for i, c in enumerate(categories)]
+
 
 @app.get("/categories/{category}/questions", response_model=List[QuestionOut])
 def get_questions_by_category(category: str, db: Session = Depends(get_db)):

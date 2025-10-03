@@ -41,12 +41,22 @@ function TeamSetup() {
     catch (err) { console.error(err); setError("Failed to remove team."); }
   };
 
-  const handleFileChange = (e) => { const f = e.target.files[0]; if(f){setFile(f); setFileName(f.name);} };
+  const handleFileChange = (e) => { 
+    const f = e.target.files[0]; 
+    if(f){setFile(f); setFileName(f.name);} 
+  };
+
   const handleFileUpload = async () => {
     if (!file) return alert("Select a file first!");
     setUploading(true);
-    try { const result = await uploadQuestions(file); alert(`Uploaded ${result.uploaded} questions ✅`); setError(""); }
-    catch (err) { console.error(err); setError("Upload failed: "+err.message); }
+    try { 
+      const result = await uploadQuestions(file); 
+      alert(`Uploaded ${result.uploaded} questions ✅`); 
+      setError(""); 
+    }
+    catch (err) { 
+      console.error(err); setError("Upload failed: "+err.message); 
+    }
     finally { setUploading(false); }
   };
 
@@ -96,7 +106,12 @@ function TeamSetup() {
       </div>
 
       <div className="text-center">
-        <button onClick={()=>navigate("/select-team")} className="px-16 py-4 bg-gradient-to-r from-yellow-400 to-purple-600 text-white text-xl font-bold rounded-full shadow-lg hover:scale-105 transition">Start Quiz</button>
+        <button 
+          onClick={()=>navigate("/select-team")}
+          className="px-16 py-4 bg-gradient-to-r from-yellow-400 to-purple-600 text-white text-xl font-bold rounded-full shadow-lg hover:scale-105 transition"
+        >
+          Start Quiz
+        </button>
       </div>
     </div>
   );

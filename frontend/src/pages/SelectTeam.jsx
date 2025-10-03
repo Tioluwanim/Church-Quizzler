@@ -58,7 +58,7 @@ function SelectTeam() {
   }, [selectedCategoryId]);
 
   const handleSelectTeam = (teamId) => {
-    setSelectedTeamId(Number(teamId)); // show questions for this team
+    setSelectedTeamId(Number(teamId)); // make sure it's always a number
   };
 
   const handleSelectQuestion = (questionId) => {
@@ -77,12 +77,12 @@ function SelectTeam() {
             key={cat.id}
             onClick={() => setSelectedCategoryId(Number(cat.id))}
             className={`px-4 py-2 rounded-full font-semibold transition ${
-              selectedCategoryId === cat.id
+              selectedCategoryId === Number(cat.id)
                 ? "bg-yellow-400 text-purple-800"
                 : "bg-purple-600 text-white hover:bg-purple-700"
             }`}
           >
-            {cat.name || cat.category_name || `Category ${cat.id}`} {/* fallback if name property differs */}
+            {cat.name || cat.category_name || `Category ${cat.id}`} {/* fallback */}
           </button>
         ))}
       </div>
@@ -94,15 +94,15 @@ function SelectTeam() {
             <div
               onClick={() => handleSelectTeam(team.id)}
               className={`p-4 rounded-2xl font-bold text-white cursor-pointer shadow-lg transition transform hover:scale-105 ${
-                selectedTeamId === team.id ? "ring-4 ring-yellow-400" : ""
+                selectedTeamId === Number(team.id) ? "ring-4 ring-yellow-400" : ""
               }`}
               style={{ backgroundColor: team.color || "#6A0DAD" }}
             >
-              {team.name || `Team ${team.id}`} {/* fallback if name property differs */}
+              {team.name || `Team ${team.id}`} {/* fallback */}
             </div>
 
             {/* Show question numbers if this team is selected */}
-            {selectedTeamId === team.id && questions.length > 0 && (
+            {selectedTeamId === Number(team.id) && questions.length > 0 && (
               <div className="mt-3 flex flex-wrap justify-center gap-2">
                 {questions.map((q, idx) => (
                   <button
@@ -120,7 +120,9 @@ function SelectTeam() {
       </div>
 
       {selectedCategoryId && questions.length === 0 && (
-        <p className="text-center mt-4 text-gray-500">No questions available for this category.</p>
+        <p className="text-center mt-4 text-gray-500">
+          No questions available for this category.
+        </p>
       )}
     </div>
   );
