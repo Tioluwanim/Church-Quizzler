@@ -15,6 +15,18 @@ function QuizPage() {
   const tickSound = useRef(new Audio("/sounds/tick.mp3"));
   const endSound = useRef(new Audio("/sounds/end.mp3"));
 
+  // 🔊 Speak question aloud
+  const speakQuestion = (text) => {
+    if (!window.speechSynthesis) return;
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.lang = "en-US";
+    utter.rate = 0.9;
+    utter.pitch = 1;
+    utter.volume = 1;
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(utter);
+  };
+
   // Load questions & team info
   useEffect(() => {
     async function loadData() {
@@ -35,7 +47,7 @@ function QuizPage() {
     loadData();
   }, [categoryId, teamId, questionId]);
 
-  // Timer
+  // Timer countdown
   useEffect(() => {
     if (!questions.length || !team) return;
     if (timeLeft <= 0) return;
@@ -57,20 +69,32 @@ function QuizPage() {
     return () => clearInterval(timer);
   }, [timeLeft, questions, team]);
 
+  // 🗣️ Speak question each time it changes
+  useEffect(() => {
+    if (questions.length > 0) {
+      const q = questions[currentIndex];
+      const textToSpeak = `${q.text}. ${
+        q.options ? "Options are: " + q.options.join(", ") : ""
+      }`;
+      speakQuestion(textToSpeak);
+    }
+  }, [currentIndex, questions]);
+
   if (!questions.length || !team) return <p>Loading...</p>;
 
   const q = questions[currentIndex];
 
-  // ✅ Reveal answer (for Stop button and timer end)
+  // ✅ Reveal answer (for Stop button & time end)
   const revealAnswer = () => {
     setShowAnswer(true);
     setAnswerRevealed(true);
     setTimeLeft(0);
+    window.speechSynthesis.cancel();
   };
 
   const awardPoints = async (isCorrect) => {
     if (isCorrect) {
-      await submitAnswer(team.id, q.id, q.points);
+      await submitAnswer({ team_id: team.id, question_id: q.id, points: q.points });
     }
 
     // Mark question as answered for all teams (global per category)
@@ -79,13 +103,13 @@ function QuizPage() {
     if (!answered.includes(q.id)) answered.push(q.id);
     localStorage.setItem(key, JSON.stringify(answered));
 
-    // Go back to SelectTeam
+    // Return to SelectTeam
     navigate(`/select-team/${categoryId}`);
   };
 
   return (
     <div className="max-w-7xl mx-auto p-8 bg-white rounded-xl shadow flex flex-col lg:flex-row gap-8">
-      {/* LEFT SIDE: Question */}
+      {/* LEFT: Question */}
       <div className="flex-1">
         <h1 className="text-3xl font-extrabold mb-6 text-purple-900">
           Team: {team.name} | Question {currentIndex + 1}/{questions.length}
@@ -115,13 +139,13 @@ function QuizPage() {
         </div>
       </div>
 
-      {/* RIGHT SIDE: Timer + Buttons */}
+      {/* RIGHT: Timer & Buttons */}
       <div className="w-full lg:w-1/3 flex flex-col items-center justify-center gap-6">
         <div className="text-5xl font-extrabold text-purple-800 mb-6">
           ⏳ {timeLeft > 0 ? timeLeft : 0}s
         </div>
 
-        {/* ✅ Stop button */}
+        {/* Stop button */}
         {!answerRevealed && (
           <button
             onClick={revealAnswer}
@@ -147,6 +171,13 @@ function QuizPage() {
             </button>
           </div>
         )}
+
+        <button
+          onClick={() => window.speechSynthesis.cancel()}
+          className="px-6 py-3 bg-gray-600 text-white rounded-xl font-bold text-lg hover:bg-gray-700 shadow-lg"
+        >
+          🔇 Stop Reading
+        </button>
       </div>
     </div>
   );
