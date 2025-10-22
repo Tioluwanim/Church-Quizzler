@@ -10,20 +10,30 @@ function QuizPage() {
   const [showAnswer, setShowAnswer] = useState(false);
   const [answerRevealed, setAnswerRevealed] = useState(false);
   const [team, setTeam] = useState(null);
+  const [voiceReady, setVoiceReady] = useState(false);
   const navigate = useNavigate();
 
   const tickSound = useRef(new Audio("/sounds/tick.mp3"));
   const endSound = useRef(new Audio("/sounds/end.mp3"));
 
-  // 🔊 Speak question aloud
+  // ✅ Set up voices
+  useEffect(() => {
+    const handleVoicesChanged = () => {
+      setVoiceReady(true);
+    };
+    window.speechSynthesis.onvoiceschanged = handleVoicesChanged;
+    handleVoicesChanged();
+  }, []);
+
+  // 🗣️ Speak question aloud
   const speakQuestion = (text) => {
-    if (!window.speechSynthesis) return;
+    if (!window.speechSynthesis) return alert("Speech synthesis not supported on this browser.");
     const utter = new SpeechSynthesisUtterance(text);
     utter.lang = "en-US";
     utter.rate = 0.9;
     utter.pitch = 1;
     utter.volume = 1;
-    window.speechSynthesis.cancel();
+    window.speechSynthesis.cancel(); // stop any previous speech
     window.speechSynthesis.speak(utter);
   };
 
@@ -69,17 +79,6 @@ function QuizPage() {
     return () => clearInterval(timer);
   }, [timeLeft, questions, team]);
 
-  // 🗣️ Speak question each time it changes
-  useEffect(() => {
-    if (questions.length > 0) {
-      const q = questions[currentIndex];
-      const textToSpeak = `${q.text}. ${
-        q.options ? "Options are: " + q.options.join(", ") : ""
-      }`;
-      speakQuestion(textToSpeak);
-    }
-  }, [currentIndex, questions]);
-
   if (!questions.length || !team) return <p>Loading...</p>;
 
   const q = questions[currentIndex];
@@ -97,14 +96,19 @@ function QuizPage() {
       await submitAnswer({ team_id: team.id, question_id: q.id, points: q.points });
     }
 
-    // Mark question as answered for all teams (global per category)
     const key = `answered_${categoryId}`;
     let answered = JSON.parse(localStorage.getItem(key) || "[]");
     if (!answered.includes(q.id)) answered.push(q.id);
     localStorage.setItem(key, JSON.stringify(answered));
 
-    // Return to SelectTeam
     navigate(`/select-team/${categoryId}`);
+  };
+
+  const handleReadAloud = () => {
+    const textToSpeak = `${q.text}. ${
+      q.options ? "Options are: " + q.options.join(", ") : ""
+    }`;
+    speakQuestion(textToSpeak);
   };
 
   return (
@@ -137,6 +141,22 @@ function QuizPage() {
             </div>
           ))}
         </div>
+
+        {/* 🔊 Read Aloud Button */}
+        <div className="mt-6 flex gap-4">
+          <button
+            onClick={handleReadAloud}
+            className="px-6 py-3 bg-blue-600 text-white rounded-xl font-bold text-lg hover:bg-blue-700 shadow-lg"
+          >
+            🔊 Read Question
+          </button>
+          <button
+            onClick={() => window.speechSynthesis.cancel()}
+            className="px-6 py-3 bg-gray-600 text-white rounded-xl font-bold text-lg hover:bg-gray-700 shadow-lg"
+          >
+            🔇 Stop Reading
+          </button>
+        </div>
       </div>
 
       {/* RIGHT: Timer & Buttons */}
@@ -145,7 +165,6 @@ function QuizPage() {
           ⏳ {timeLeft > 0 ? timeLeft : 0}s
         </div>
 
-        {/* Stop button */}
         {!answerRevealed && (
           <button
             onClick={revealAnswer}
@@ -171,13 +190,6 @@ function QuizPage() {
             </button>
           </div>
         )}
-
-        <button
-          onClick={() => window.speechSynthesis.cancel()}
-          className="px-6 py-3 bg-gray-600 text-white rounded-xl font-bold text-lg hover:bg-gray-700 shadow-lg"
-        >
-          🔇 Stop Reading
-        </button>
       </div>
     </div>
   );
