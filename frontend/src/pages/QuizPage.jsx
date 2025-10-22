@@ -16,23 +16,29 @@ function QuizPage() {
   const tickSound = useRef(new Audio("/sounds/tick.mp3"));
   const endSound = useRef(new Audio("/sounds/end.mp3"));
 
-  // ✅ Set up voices
+  // ✅ Prepare speech synthesis voices
   useEffect(() => {
-    const handleVoicesChanged = () => {
-      setVoiceReady(true);
-    };
+    const handleVoicesChanged = () => setVoiceReady(true);
     window.speechSynthesis.onvoiceschanged = handleVoicesChanged;
     handleVoicesChanged();
   }, []);
 
-  // 🗣️ Speak question aloud
+  // 🗣️ Clean & Speak Question Aloud
   const speakQuestion = (text) => {
-    if (!window.speechSynthesis) return alert("Speech synthesis not supported on this browser.");
-    const utter = new SpeechSynthesisUtterance(text);
+    if (!window.speechSynthesis) {
+      alert("Speech synthesis not supported on this browser.");
+      return;
+    }
+
+    // ✅ Remove leading numbers, bullets, or dots like "1.", "2)", "3 -"
+    const cleanText = text.replace(/^\s*\d+[\.\)\-]?\s*/, "");
+
+    const utter = new SpeechSynthesisUtterance(cleanText);
     utter.lang = "en-US";
     utter.rate = 0.9;
     utter.pitch = 1;
     utter.volume = 1;
+
     window.speechSynthesis.cancel(); // stop any previous speech
     window.speechSynthesis.speak(utter);
   };
@@ -83,7 +89,7 @@ function QuizPage() {
 
   const q = questions[currentIndex];
 
-  // ✅ Reveal answer (for Stop button & time end)
+  // ✅ Reveal answer (for Stop button & timer end)
   const revealAnswer = () => {
     setShowAnswer(true);
     setAnswerRevealed(true);
@@ -142,7 +148,7 @@ function QuizPage() {
           ))}
         </div>
 
-        {/* 🔊 Read Aloud Button */}
+        {/* 🔊 Read Aloud Controls */}
         <div className="mt-6 flex gap-4">
           <button
             onClick={handleReadAloud}
