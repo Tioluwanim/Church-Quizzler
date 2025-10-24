@@ -240,6 +240,17 @@ def upload_questions(file: UploadFile = File(...), db: Session = Depends(get_db)
         created.append(question)
 
     return {"uploaded": len(created), "questions": created}
+# =====================
+# CLEAR ALL QUESTIONS
+# =====================
+@app.delete("/questions/clear")
+def clear_all_questions(db: Session = Depends(get_db)):
+    """
+    Deletes all questions from the database.
+    Use carefully!
+    """
+    deleted_count = crud.clear_all_questions(db)
+    return {"message": f"{deleted_count} questions deleted successfully."}
 
 # =====================
 # SCORE ROUTES

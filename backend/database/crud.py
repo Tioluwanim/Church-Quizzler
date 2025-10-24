@@ -63,6 +63,11 @@ def update_question(db: Session, question_id: int, text=None, answer=None, categ
     db.refresh(question)
     return question
 
+def clear_all_questions(db: Session):
+    count = db.query(Question).delete()
+    db.commit()
+    return count
+
 def delete_question(db: Session, question_id: int):
     question = db.query(Question).filter(Question.id == question_id).first()
     if question:
