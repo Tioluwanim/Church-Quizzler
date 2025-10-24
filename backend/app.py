@@ -1,4 +1,6 @@
 import os
+import re
+import json
 from fastapi import FastAPI, Depends, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
@@ -9,7 +11,6 @@ from fastapi.staticfiles import StaticFiles
 from starlette.responses import FileResponse
 from docx import Document
 import PyPDF2
-import json
 
 # Absolute imports from your package
 from database.db import Base, engine, SessionLocal
@@ -21,7 +22,7 @@ from database import crud, models
 UPLOAD_FOLDER = "uploads"
 ALLOWED_EXTENSIONS = {"txt", "docx", "pdf"}
 
-app = FastAPI(title="Church Quiz API", version="1.2")
+app = FastAPI(title="Church Quiz API", version="1.3")
 
 # CORS
 app.add_middleware(
@@ -93,7 +94,6 @@ class ScoreOut(BaseModel):
 
     class Config:
         orm_mode = True
-
 
 # =====================
 # TEAM ROUTES
@@ -168,16 +168,21 @@ def get_questions_by_category(category_id: int, db: Session = Depends(get_db)):
     category_name = categories[category_id - 1]
     return crud.get_questions_by_category(db, category_name)
 
+# =====================
+# UPLOAD QUESTIONS (FIXED)
+# =====================
 @app.post("/questions/upload")
 def upload_questions(file: UploadFile = File(...), db: Session = Depends(get_db)):
     filename = secure_filename(file.filename)
     ext = filename.rsplit(".", 1)[1].lower()
     if ext not in ALLOWED_EXTENSIONS:
         raise HTTPException(status_code=400, detail="Invalid file type")
+
     filepath = os.path.join(UPLOAD_FOLDER, filename)
     with open(filepath, "wb") as f:
         f.write(file.file.read())
 
+    # Read file content
     text = ""
     if ext == "txt":
         with open(filepath, "r", encoding="utf-8") as f:
@@ -197,11 +202,23 @@ def upload_questions(file: UploadFile = File(...), db: Session = Depends(get_db)
         line = line.strip()
         if not line or "|" not in line:
             continue
+
+        # 🔹 Remove numbering like "1." or "12."
+        line = re.sub(r'^\d+\.\s*', '', line)
+
         parts = [p.strip() for p in line.split("|")]
-        q_text = parts[0]
+
+        # Expect format: Question | Answer | Category | Points
+        q_text = parts[0] if len(parts) > 0 else ""
         q_answer = parts[1] if len(parts) > 1 else ""
-        q_category = parts[2] if len(parts) > 2 and parts[2] != "" else None
-        q_points = int(parts[3]) if len(parts) > 3 and parts[3].isdigit() else 10
+        q_category = parts[2] if len(parts) > 2 else None
+
+        try:
+            q_points = int(parts[3]) if len(parts) > 3 else 10
+        except ValueError:
+            q_points = 10
+
+        # Optional options field
         q_options = None
         if len(parts) > 4 and parts[4].strip():
             try:
@@ -209,13 +226,19 @@ def upload_questions(file: UploadFile = File(...), db: Session = Depends(get_db)
             except Exception:
                 q_options = [o.strip() for o in parts[4].split(",")]
 
-        question = crud.create_question(db,
-                                        text=q_text,
-                                        answer=q_answer,
-                                        category=q_category,
-                                        points=q_points,
-                                        options=q_options)
+        # Debug print (can remove later)
+        print(f"Uploading -> Q: {q_text} | A: {q_answer} | C: {q_category} | P: {q_points}")
+
+        question = crud.create_question(
+            db,
+            text=q_text,
+            answer=q_answer,
+            category=q_category,
+            points=q_points,
+            options=q_options,
+        )
         created.append(question)
+
     return {"uploaded": len(created), "questions": created}
 
 # =====================
@@ -231,18 +254,13 @@ def team_scores(team_id: int, db: Session = Depends(get_db)):
 
 @app.get("/scoreboard")
 def scoreboard(db: Session = Depends(get_db)):
-    """
-    Returns overall scoreboard (all teams always included).
-    """
+    """Returns overall scoreboard (all teams always included)."""
     return crud.get_scoreboard(db)
 
 @app.get("/scoreboard/category/{category}")
 def scoreboard_by_category(category: str, db: Session = Depends(get_db)):
-    """
-    Returns scoreboard for a specific category (all teams always included).
-    """
+    """Returns scoreboard for a specific category (all teams always included)."""
     return crud.get_scoreboard_by_category(db, category)
-
 
 # =====================
 # Serve frontend if built
