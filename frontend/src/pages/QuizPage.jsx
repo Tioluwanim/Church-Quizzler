@@ -10,40 +10,32 @@ function QuizPage() {
   const [showAnswer, setShowAnswer] = useState(false);
   const [answerRevealed, setAnswerRevealed] = useState(false);
   const [team, setTeam] = useState(null);
-  const [voiceReady, setVoiceReady] = useState(false);
+  const [readingDone, setReadingDone] = useState(false);
   const navigate = useNavigate();
 
   const tickSound = useRef(new Audio("/sounds/tick.mp3"));
   const endSound = useRef(new Audio("/sounds/end.mp3"));
 
-  // ✅ Prepare speech synthesis voices
-  useEffect(() => {
-    const handleVoicesChanged = () => setVoiceReady(true);
-    window.speechSynthesis.onvoiceschanged = handleVoicesChanged;
-    handleVoicesChanged();
-  }, []);
-
-  // 🗣️ Clean & Speak Question Aloud
-  const speakQuestion = (text) => {
+  // 🗣️ Clean & Speak Text
+  const speak = (text, onEnd) => {
     if (!window.speechSynthesis) {
       alert("Speech synthesis not supported on this browser.");
       return;
     }
 
-    // ✅ Remove leading numbers, bullets, or dots like "1.", "2)", "3 -"
-    const cleanText = text.replace(/^\s*\d+[\.\)\-]?\s*/, "");
-
+    const cleanText = text.replace(/^\s*\d+[\.\)\-]?\s*/, ""); // remove "1." etc.
     const utter = new SpeechSynthesisUtterance(cleanText);
     utter.lang = "en-US";
-    utter.rate = 0.9;
+    utter.rate = 0.95;
     utter.pitch = 1;
     utter.volume = 1;
 
+    utter.onend = onEnd;
     window.speechSynthesis.cancel(); // stop any previous speech
     window.speechSynthesis.speak(utter);
   };
 
-  // Load questions & team info
+  // 🧠 Load questions & team info
   useEffect(() => {
     async function loadData() {
       const qData = await fetchQuestionsByCategory(categoryId);
@@ -63,9 +55,24 @@ function QuizPage() {
     loadData();
   }, [categoryId, teamId, questionId]);
 
-  // Timer countdown
+  // 🗣️ Auto-read question & start timer afterwards
   useEffect(() => {
     if (!questions.length || !team) return;
+    const q = questions[currentIndex];
+
+    const textToSpeak = `${q.text}. ${
+      q.options ? "Options are: " + q.options.join(", ") : ""
+    }`;
+
+    speak(textToSpeak, () => {
+      setReadingDone(true);
+      setTimeLeft(team.timer_seconds || 30);
+    });
+  }, [questions, team, currentIndex]);
+
+  // ⏳ Timer
+  useEffect(() => {
+    if (!questions.length || !team || !readingDone) return;
     if (timeLeft <= 0) return;
 
     const timer = setInterval(() => {
@@ -83,18 +90,21 @@ function QuizPage() {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [timeLeft, questions, team]);
+  }, [timeLeft, questions, team, readingDone]);
 
   if (!questions.length || !team) return <p>Loading...</p>;
-
   const q = questions[currentIndex];
 
-  // ✅ Reveal answer (for Stop button & timer end)
+  // ✅ Reveal answer + speak it aloud
   const revealAnswer = () => {
     setShowAnswer(true);
     setAnswerRevealed(true);
     setTimeLeft(0);
     window.speechSynthesis.cancel();
+
+    // Speak the correct answer
+    const answerText = `The correct answer is: ${q.answer}`;
+    speak(answerText);
   };
 
   const awardPoints = async (isCorrect) => {
@@ -107,19 +117,13 @@ function QuizPage() {
     if (!answered.includes(q.id)) answered.push(q.id);
     localStorage.setItem(key, JSON.stringify(answered));
 
+    window.speechSynthesis.cancel();
     navigate(`/select-team/${categoryId}`);
-  };
-
-  const handleReadAloud = () => {
-    const textToSpeak = `${q.text}. ${
-      q.options ? "Options are: " + q.options.join(", ") : ""
-    }`;
-    speakQuestion(textToSpeak);
   };
 
   return (
     <div className="max-w-7xl mx-auto p-8 bg-white rounded-xl shadow flex flex-col lg:flex-row gap-8">
-      {/* LEFT: Question */}
+      {/* LEFT SIDE: Question */}
       <div className="flex-1">
         <h1 className="text-3xl font-extrabold mb-6 text-purple-900">
           Team: {team.name} | Question {currentIndex + 1}/{questions.length}
@@ -147,25 +151,9 @@ function QuizPage() {
             </div>
           ))}
         </div>
-
-        {/* 🔊 Read Aloud Controls */}
-        <div className="mt-6 flex gap-4">
-          <button
-            onClick={handleReadAloud}
-            className="px-6 py-3 bg-blue-600 text-white rounded-xl font-bold text-lg hover:bg-blue-700 shadow-lg"
-          >
-            🔊 Read Question
-          </button>
-          <button
-            onClick={() => window.speechSynthesis.cancel()}
-            className="px-6 py-3 bg-gray-600 text-white rounded-xl font-bold text-lg hover:bg-gray-700 shadow-lg"
-          >
-            🔇 Stop Reading
-          </button>
-        </div>
       </div>
 
-      {/* RIGHT: Timer & Buttons */}
+      {/* RIGHT SIDE: Timer + Controls */}
       <div className="w-full lg:w-1/3 flex flex-col items-center justify-center gap-6">
         <div className="text-5xl font-extrabold text-purple-800 mb-6">
           ⏳ {timeLeft > 0 ? timeLeft : 0}s
