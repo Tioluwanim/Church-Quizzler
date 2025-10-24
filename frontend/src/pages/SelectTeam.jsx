@@ -60,8 +60,20 @@ function SelectTeam() {
     setSelectedTeamId(Number(teamId));
   };
 
+  // NEW: On question click we store a short user-gesture token then navigate.
+  // This improves the chance that QuizPage can auto-play speech.
   const handleSelectQuestion = (questionId) => {
     if (!selectedTeamId) return;
+    try {
+      // store a short-lived token indicating a user gesture happened
+      sessionStorage.setItem("quiz_user_gesture", "1");
+      sessionStorage.setItem("quiz_auto_read", "1");
+      // store the time so we can expire it if necessary
+      sessionStorage.setItem("quiz_gesture_ts", String(Date.now()));
+    } catch (err) {
+      console.warn("sessionStorage not available:", err);
+    }
+
     navigate(`/quiz/${selectedTeamId}/${selectedCategoryId}/${questionId}`);
   };
 
@@ -104,9 +116,8 @@ function SelectTeam() {
             {selectedTeamId === team.id && questions.length > 0 && (
               <div className="mt-3 flex flex-wrap justify-center gap-2">
                 {questions.map((q, idx) => {
-                  // ✅ Check global answered questions for this category
                   const answeredKey = `answered_${selectedCategoryId}`;
-                  const answered = JSON.parse(localStorage.getItem(answeredKey) || "[]");
+                  const answered = JSON.parse(sessionStorage.getItem(answeredKey) || localStorage.getItem(answeredKey) || "[]");
                   const alreadyAnswered = answered.includes(q.id);
 
                   return (
